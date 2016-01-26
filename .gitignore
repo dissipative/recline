@@ -1,0 +1,8 @@
+*.[oa]
+*~
+.*
+output/
+data/
+!/.gitignore
+.Rproj.user
+test.R
