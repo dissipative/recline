@@ -1,11 +1,4 @@
-ConsoleIn <- function (message='Write a command: ') {
-    # Grab user console input
-    # Args:
-    #   message: a message text for user before grabbing an input
-    input <- readline(message)
-    if (length(input) == 0 || input == '') input <- NULL
-    return(input)
-}
+# internal functions (non-imported)
 
 CheckDir <- function(path){
     # Check if directory exist
@@ -13,25 +6,6 @@ CheckDir <- function(path){
         dir.create(path)
         message('Created directory \"', path, '\"')
     }
-}
-
-SaveCsv <- function(x, filename, row.names=T, rewrite=T) {
-    # Save data.frame to file
-    # use utils
-    # Args:
-    #   x: a data.frame to save
-    #   filename: a path and filename
-    #   row.names: boolean - should row names be written?
-    #   rewrite: rewrite existing file?
-    if(!inherits(x,"data.frame")) stop("x should be an object of class \"data.frame\".")
-    if (rewrite!=T) {
-        continue <-  ifelse(file.exists(filename),
-                    ConsoleIn(paste0('File ', filename, ' exists. Rewrite? (Y/N): ')),
-                    'y')
-    } else {
-        continue <- 'y'
-    }
-    if (tolower(continue) == 'y') write.csv( x, filename, row.names=row.names )
 }
 
 EmptyDF <- function(colnames=c('a', 'b', 'c')){
@@ -297,7 +271,7 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
     return(result)
 }
 
-GetDistrByPred <- function(stack=RasterStack, predictors=data.frame,
+GetDistrByPred <- function(stack, predictors,
                            boost=.05, checkIfStop=F, progress=F) {
     # Get approximate distribution for each layer in stack by predictors values
     # use raster
@@ -308,11 +282,12 @@ GetDistrByPred <- function(stack=RasterStack, predictors=data.frame,
     if(!inherits(stack, "RasterStack"))
         stop("stack should be an object of class \"RasterStack\".")
     layer.list <- list()
-    message('Approximating distibution in each layer.')
+    cat('Approximating distibution in each layer.')
     for (i in 1:length(stack[1])) {
-        message('Layer no. ', i, '...')
+        cat('.')
         layerVal.list <- unique(round(predictors[,i]))
-        pb <- txtProgressBar(style=3, max=length(layerVal.list), min=0)
+        if (progress)
+            pb <- txtProgressBar(style=3, max=length(layerVal.list), min=0)
         for (j in 1:length(layerVal.list)) {
             if (progress)
                 setTxtProgressBar(pb, j);
@@ -347,13 +322,16 @@ GetDistrByPred <- function(stack=RasterStack, predictors=data.frame,
             exit <- F
         }
         if ( exit ) {
-            message('Not enough information in data, try again with larger boost')
+            cat('weak signal\n')
             break
         }
     }
+
     if (!exit && checkIfStop)
+        cat('done\n\n')
         return(layer.result)
     if (!exit)
+        cat('done\n\n')
         return(layer.list)
 }
 
@@ -363,7 +341,8 @@ OverlapLayers <- function(list, stopIfNA=F, progress=F) {
     # Args:
     #   list: list of Raster objects produced by GetDistrByPred function
     #   stopIfNA: stop if all values in resulting layer is NA
-    pb <- txtProgressBar(style=3, min=0, max=length(list))
+    if (progress)
+        pb <- txtProgressBar(style=3, min=0, max=length(list))
     for (i in 1:length(list)) {
         if (progress)
             setTxtProgressBar(pb, i)

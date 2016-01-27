@@ -1,4 +1,4 @@
-rcn.phyloclim <- function(trees,
+AncNiche <- function(trees,
                           best.tree,
                           pca.wrapper,
                           outgroup,
@@ -17,12 +17,12 @@ rcn.phyloclim <- function(trees,
 #         trees sample fraction
 #         outgroup tips (comma separated string)
 #         internal nodes to estimate states (combined characters or numbers)
-    if(!inherits(pca.wrapper,"RCN PCA wrapper"))
-        stop("pca.wrapper should be an object of class \"RCN PCA wrapper\".")
-    if(!inherits(trees,"multiPhylo"))
-        stop("trees should be an object of class \"multiPhylo\".")
-    if(!inherits(best.tree,"phylo"))
-        stop("best.tree should be an object of class \"phylo\".")
+    if(!inherits(pca.wrapper, 'pca.wrapper'))
+        stop('pca.wrapper should be an object of class \"pca.wrapper\".')
+    if(!inherits(trees, 'multiPhylo'))
+        stop('trees should be an object of class \"multiPhylo\".')
+    if(!inherits(best.tree,'phylo'))
+        stop('best.tree should be an object of class \"phylo\".')
     .pca <- pca.wrapper$dudi.pca
     .pca2 <- pca.wrapper$prcomp
     .result.presvals <- as.data.frame(pca.wrapper$presvals)
@@ -98,6 +98,6 @@ rcn.phyloclim <- function(trees,
     }
     # return .states, .models
     result$states <- .states
-    class(result) <- 'Phylogeny-based climatic niche'
+    class(result) <- 'anc.niche'
     return(result)
 }

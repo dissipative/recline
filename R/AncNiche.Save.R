@@ -1,17 +1,18 @@
-rcn.plyloclim.save <- function(phyloclim, pca.wrapper, output.path){
+AncNiche.Save <- function(anc.niche, pca.wrapper, output.path){
 # in: phylogeny based climatic niche, output path
 
-    if(!inherits(phyloclim,"Phylogeny-based climatic niche"))
-        stop("phyloclim should be an object of class \"phylogeny based climatic niche\".")
-    if(!inherits(pca.wrapper,"RCN PCA wrapper"))
-        stop("pca.wrapper should be an object of class \"RCN PCA wrapper\".")
+    if(!inherits(anc.niche, 'anc.niche'))
+        stop("anc.niche should be an object of class \"anc.niche\".")
+    if(!inherits(pca.wrapper,'pca.wrapper'))
+        stop("pca.wrapper should be an object of class \"pca.wrapper\".")
 
     output.path <- gsub('/$', '', output.path)
-    CheckDir(paste0(output.path, '/phylo.plots'))
+    CheckDir(file.path(output.path, 'phylo.plots'))
+    CheckDir(file.path(output.path, 'phylo.data'))
 
-    .phylo.pca <- phyloclim$phylo.pca
-    .phylo.states <- phyloclim$states
-    .phylo.ancNode <- phyloclim$nodes
+    .phylo.pca <- anc.niche$phylo.pca
+    .phylo.states <- anc.niche$states
+    .phylo.ancNode <- anc.niche$nodes
     .pca2 <- pca.wrapper$prcomp
     .result.presvals <- as.data.frame(pca.wrapper$presvals)
 
@@ -21,14 +22,27 @@ rcn.plyloclim.save <- function(phyloclim, pca.wrapper, output.path){
         factor <- .phylo.pca[,i]
         names(factor) <- rownames(.phylo.pca)
         svg(paste0(output.path, '/phylo.plots/contMapPC', i ,'.svg'), width=10, height=7)
-        phytools::contMap(phyloclim$bestTree, factor, fsize=0.2, lwd=1)
+        phytools::contMap(anc.niche$bestTree, factor, fsize=0.2, lwd=1)
         dev.off()
     }
 
     # Save models info
-    if ('models' %in% names(phyloclim)) {
-        CheckDir(paste0(output.path, '/phylo.data'))
-        SaveCsv(as.data.frame(phyloclim$models), paste0(output.path, '/phylo.data/models.csv'), row.names=F)
+    if ('models' %in% names(anc.niche)) {
+        write.csv(anc.niche$models, file.path(output.path, 'phylo.data/models.csv'), quote=F, row.names=F)
+    }
+    # Save states
+    if (class(.phylo.states) == 'list') {
+        for (i in 1:length(.phylo.states)) {
+            write.csv(.phylo.states[i],
+                file.path(output.path, paste0('phylo.data/pcaEstim.node', .phylo.ancNode[i], '.csv')),
+                quote=F
+                )
+        }
+    } else {
+        write.csv(.phylo.states,
+                file.path(output.path, paste0('phylo.data/pcaEstim.node', .phylo.ancNode, '.csv')),
+                quote=F
+                )
     }
 
     # Save plot of PCA with ancestor space
@@ -53,6 +67,6 @@ rcn.plyloclim.save <- function(phyloclim, pca.wrapper, output.path){
                                   color=col,
                                   ) +
         ggplot2::theme_minimal()
-    ggplot2::ggsave(filename=(paste0(output.path, '/phylo.plots/ancPCA.svg')),
+    ggplot2::ggsave(filename=(file.path(output.path, 'phylo.plots/ancPCA.svg')),
                 plot=.plot, width=10, height=10)
 }

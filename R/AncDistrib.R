@@ -1,10 +1,10 @@
 # Ancestors distribution
-rcn.anc.distrib <- function(anc.niche,
-                            pca.wrapper,
-                            bioclim.past.data,
-                            bioclim.ext='tif',
-                            start.boost=.05, boost.step=.1
-                            ) {
+AncDistrib <- function(anc.niche,
+                        pca.wrapper,
+                        bioclim.past.data,
+                        bioclim.ext='tif',
+                        start.boost=.05, boost.step=.1
+                        ) {
 
 # in:
 #           Phylogeny-based climatic niche
@@ -14,20 +14,20 @@ rcn.anc.distrib <- function(anc.niche,
 #           extension of gis layers
 #           start.boost
 # out: ancestral distribution object
-    if(!inherits(anc.niche,"Phylogeny-based climatic niche"))
-        stop("anc.niche should be an object of class \"Phylogeny-based climatic niche\".")
-    if(!inherits(pca.wrapper,"RCN PCA wrapper"))
-        stop("pca.wrapper should be an object of class \"RCN PCA wrapper\".")
+    if(!inherits(anc.niche, 'anc.niche'))
+        stop('anc.niche should be an object of class \"anc.niche\".')
+    if(!inherits(pca.wrapper, 'pca.wrapper'))
+        stop('pca.wrapper should be an object of class \"pca.wrapper\".')
 
     .pca2 <- pca.wrapper$prcomp
     .pca <- pca.wrapper$dudi.pca
     .pca.dim <- ncol(.pca$li)
     .phylo.states <- anc.niche$states
     .predictors.boost <- start.boost
-    .nodes <- anc.niche$nodes
     result <- list()
+    result$nodes <- anc.niche$nodes
 
-    message('Restoring predictor values for ancestor nodes.')
+    # Restore only most important variables in used dimensions
     .pca.variables <- factoextra::facto_summarize(.pca2, 'var', axes=1:.pca.dim)
     .pca.eig <- factoextra::get_eigenvalue(.pca2)[1:.pca.dim, 1]
     .pca.theo_contrib <- sum(100/length(.pca.variables$contrib) * .pca.eig)
@@ -36,13 +36,12 @@ rcn.anc.distrib <- function(anc.niche,
     if (class(.phylo.states) == 'list') {
         .anc.restored <- list()
         for (i in 1:length(.phylo.states)) {
-            .anc.restored[[i]] <- t(t(.phylo.states[[i]] %*% t(.pca2$rotation[,1:.pca.dim])) * .pca2$scale + .pca2$center)
+            .anc.restored[[i]] <- t(t(.phylo.states[[i]] %*% t(.pca2$rotation[,1:.pca.dim])) * .pca2$scale + .pca2$center)[,.paleo.use]
         }
     } else {
-        .anc.restored <- t(t(.phylo.states %*% t(.pca2$rotation[,1:.pca.dim])) * .pca2$scale + .pca2$center)
+        .anc.restored <- t(t(.phylo.states %*% t(.pca2$rotation[,1:.pca.dim])) * .pca2$scale + .pca2$center)[,.paleo.use]
     }
     result$anc.presvals <- .anc.restored
-
 
     # Load ancient bioclim data
     .paleo.geoFiles <- list.files(
@@ -58,16 +57,16 @@ rcn.anc.distrib <- function(anc.niche,
         result$boost <- list()
         result$points <- list()
         for (i in 1:length(.anc.restored)) {
+            message('Node = ', result$nodes[i], '. Starting boost = ', .predictors.boost)
             repeat {
                 .paleo.distrib <- GetDistrByPred(.paleo.stack,
-                                              predictors=.anc.restored[[i]][,.paleo.use],
+                                              predictors=.anc.restored[[i]],
                                               boost=.predictors.boost,
-                                              checkIfStop=T)
-#                 .paleo.distrib <- OverlapLayers(.paleo.list, stopIfNA=T)
+                                              checkIfStop=T,
+                                              progress=F)
                 if ( is.null(.paleo.distrib) || all(is.na(raster::values(.paleo.distrib))) ) {
-                    message('Empty result. Trying again.')
                     .predictors.boost <- .predictors.boost + boost.step
-                    message('Now boosting presvals by ',.predictors.boost)
+                    message('Boosting predictors values range by ', .predictors.boost)
                 } else {
                     break
                 }
@@ -77,21 +76,20 @@ rcn.anc.distrib <- function(anc.niche,
             # Extract points
             .paleo.distrib[.paleo.distrib == 0] <- NA
             result$points[[i]] <- raster::rasterToPoints(.paleo.distrib)
-            .predictrs.boost <- start.boost
+            .predictors.boost <- start.boost
         }
-        names(result$distrib) <- .nodes
-        names(result$points)  <- .nodes
-        names(result$anc.presvals) <- .nodes
+        names(result$distrib) <- result$nodes
+        names(result$points)  <- result$nodes
+        names(result$anc.presvals) <- result$nodes
     } else {
         repeat {
             .paleo.distrib <- GetDistrByPred(.paleo.stack,
-                                          predictors=.anc.restored[,.paleo.use],
+                                          predictors=.anc.restored,
                                           boost=.predictors.boost,
                                           checkIfStop=T)
-#             .paleo.distrib <- OverlapLayers(.paleo.list)
-            if ( is.null(.paleo.distrib) || all(is.na(values(.paleo.distrib))) ) {
-                message('Empty result. Trying again.')
+            if ( is.null(.paleo.distrib) || all(is.na(raster::values(.paleo.distrib))) ) {
                 .predictors.boost <- .predictors.boost + boost.step
+                message('Now boosting presvals range by ', .predictors.boost)
             } else {
                 break
             }
@@ -102,10 +100,7 @@ rcn.anc.distrib <- function(anc.niche,
         .paleo.distrib[.paleo.distrib == 0] <- NA
         result$points <- raster::rasterToPoints(.paleo.distrib)
     }
-
-    # result$nodes <- .nodes
-
-    class(result) <- 'Ancestral distribution data'
+    class(result) <- 'anc.distrib'
     return(result)
 }
 

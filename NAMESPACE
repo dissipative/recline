@@ -1,1 +1,8 @@
-exportPattern("^[[:alpha:]]+")
+export(
+	PcaWrap,
+	PcaWrap.Save,
+	AncNiche,
+	AncNiche.Save,
+	AncDistrib,
+	AncDistrib.Save
+	)

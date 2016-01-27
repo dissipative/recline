@@ -1,8 +1,19 @@
-rcn.pca.wrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
+as.pca.wrapper <- function(result.presvals, pca, pca2, pca.expl, pca.loadings){
+    # Create an object of class "RCN PCA wrapper"
+    result <- list();
+    result$presvals <- result.presvals
+    result$dudi.pca <- pca
+    result$prcomp <- pca2
+    result$explain <- pca.expl
+    result$loadings <- pca.loadings
+    class(result) <- 'pca.wrapper'
+    return(result)
+}
+
+PcaWrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
 #   in: paths to occurence data, bioclim variables, extension of gis layers
 #   class name: RCN PCA wrapper
     # Data processing
-    message('Data loading..')
     .list.locations <- read.csv(
         occurence.points,
         stringsAsFactors=F, header=T, sep=",", dec="."
@@ -11,7 +22,7 @@ rcn.pca.wrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
         path=bioclim.data,
         pattern=paste0('*.', bioclim.ext), full.names=T
     )
-    message('Extracting predictors values..')
+    message('Extracting predictors values.')
     .list.presvals <- raster::extract( #predictors values
         raster::stack(.list.geoFiles),
         data.frame(.list.locations$Long, .list.locations$Lat)
@@ -30,8 +41,9 @@ rcn.pca.wrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
     colnames(.result.presvals)[2] <- "Type"
     colnames(.result.presvals)[3] <- "Clade"
     .result.presvals <- .result.presvals[complete.cases(.result.presvals),]
-    message('Performing PCA..')
+
     # PCA
+    message('Performing PCA.')
     .list.types <- unique(as.data.frame(.result.presvals)$Type)
     .pca.data <- .list.presvals[complete.cases(.list.presvals),]
     .pca <- ade4::dudi.pca( .pca.data, nf=3, scannf=F, scale=T  )
@@ -41,5 +53,6 @@ rcn.pca.wrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
     # alternative pca for data restoration:
     .pca2 <- prcomp(.pca.data, scale.=T)
     result <- as.pca.wrapper(.result.presvals, .pca, .pca2, .pca.expl, .pca.loadings)
+    message('Done.')
     return(result);
 }
