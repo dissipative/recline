@@ -39,13 +39,13 @@ PcaWrap.Save <- function(pca.wrapper, output.path) {
         plot=.var.biplot, width=10, height=10)
 
     .pca.plotList <- list()
-    for (i in 1:.pca.dim) .pca.plotList[[i]] <- factoextra::fviz_contrib(.pca, choice='var', axes=i)
+    for (i in 1:.pca.dim) .pca.plotList[[i]] <- factoextra:::fviz_contrib(.pca, choice='var', axes=i)
     for (i in 1:.pca.dim) {
         ggplot2::ggsave(filename=paste0(output.path, '/pca.plots/contrib.dim', i ,'.svg'),
             plot=.pca.plotList[[i]], width=10, height=7)
     }
 
-    .contrib.all <- factoextra::fviz_contrib(.pca2, choice='var', axes=1:.pca.dim)
+    .contrib.all <- factoextra:::fviz_contrib(.pca2, choice='var', axes=1:.pca.dim)
     ggplot2::ggsave(filename=file.path(output.path, 'pca.plots/contrib.all.svg'),
             plot=.contrib.all, width=10, height=7)
 
