@@ -62,8 +62,7 @@ AncDistrib <- function(anc.niche,
                 .paleo.distrib <- GetDistrByPred(.paleo.stack,
                                               predictors=.anc.restored[[i]],
                                               boost=.predictors.boost,
-                                              checkIfStop=T,
-                                              progress=F)
+                                              checkIfStop=T)
                 if ( is.null(.paleo.distrib) || all(is.na(raster::values(.paleo.distrib))) ) {
                     .predictors.boost <- .predictors.boost + boost.step
                     message('Boosting predictors values range by ', .predictors.boost)

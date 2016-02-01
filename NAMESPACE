@@ -1,8 +1,8 @@
-export(
-	PcaWrap,
-	PcaWrap.Save,
-	AncNiche,
-	AncNiche.Save,
-	AncDistrib,
-	AncDistrib.Save
-	)
+export(PcaWrap, PcaWrap.Save, AncNiche, AncNiche.Save, AncDistrib, AncDistrib.Save)
+
+importFrom(ape, ladderize, drop.tip)
+importFrom(phytools, phylosig, fastAnc, contMap)
+importFrom(phangorn, getRoot)
+importFrom(geiger, fitContinuous, rescale)
+importFrom(raster, values, stack, rasterToPoints, writeRaster, extract)
+importFrom(ade4, dudi.pca)

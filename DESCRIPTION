@@ -3,10 +3,13 @@ Type: Package
 Title: Reconstruction of Climatic Niche by phylogenetic and geographic data
 Version: 0.0.0.9000
 Date: 2016-01-17
-Author@R: "Artem Frolov <af.atgc@gmail.com> [aut, cre, cph]"
+Author: Artem A. Frolov [aut, cre, cph]
+Maintainer: Artem A. Frolov <af.atgc@gmail.com>
 License: GPL (>= 2)
-Depends: R (>= 2.10)
-Imports: ape,
+Depends: 
+    R (>= 2.10)
+Imports: 
+    ape,
     phytools,
     phangorn,
     geiger,
@@ -15,5 +18,14 @@ Imports: ape,
     factoextra,
     reshape2,
     ggplot2,
-    grDevices
-Description: The package provides several functions for easy and convenient obtaining climatic niche of any species or group of specimens by a collection of their points of occurrence. Climatic niche space is constructed by PCA of predictors values of each point derived from BIOCLIM variables. It also contains functions for making a reconstruction of the ancestral climatic niche by given ultrametric phylogenetic tree and for estimation of the probable distribution area of the ancestor by predictors values restored from PCA.
+    grDevices,
+    utils,
+    stats
+Description: The package provides several functions for easy and convenient
+    obtaining climatic niche of any species or group of specimens by a collection
+    of their points of occurrence. Climatic niche space is constructed by PCA of
+    predictors values of each point derived from BIOCLIM variables. It also contains
+    functions for making a reconstruction of the ancestral climatic niche by given
+    ultrametric phylogenetic tree and for estimation of the probable distribution
+    area of the ancestor by predictors values restored from PCA.
+RoxygenNote: 5.0.1

@@ -75,7 +75,7 @@ DropTip <- function(phylo, tipsToDrop=c(1,2)) {
 }
 
 PhyloRescale <- function (trees, times=1000) {
-    # Function to rescale bracnh lengths on phylogenetic trees
+    # Function to rescale brach lengths on phylogenetic trees
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   times: a number, in which times trees branch lenghts should be scaled
@@ -87,7 +87,6 @@ PhyloRescale <- function (trees, times=1000) {
         newtrees[[x]] <- trees[[x]]
     }
     class(newtrees) <- "multiPhylo"
-    message('Rescaling in ', times ,' times done.')
     return(newtrees)
 }
 
@@ -97,19 +96,12 @@ MultiplePhylosig <- function (trees, testdata) {
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   testdata: a vector with continuous trait with names matching trees tips
-    if(!inherits(trees,"multiPhylo"))
-        stop("trees should be an object of class \"multiPhylo\".")
-    message("Estimating phylogenetic signal...")
-    phylotest <- EmptyDF( c("lambda","P") )
-    pb <- txtProgressBar(style=3, min=0, max=length(trees));
-    for (i in 1:length(trees)){
-        mes <- phytools::phylosig(trees[[i]], testdata, method="lambda", test=T)
-        phylotest[i,] <- c(mes$lambda,mes$P)
-        setTxtProgressBar(pb, i)
-    }
+    phylotest <- as.data.frame(t(sapply(trees, phytools::phylosig, x=testdata, test=T, method="lambda")))
+    phylotest <- as.data.frame(cbind(unlist(phylotest$lambda), unlist(phylotest$P)))
+    colnames(phylotest) <- c('lambda', 'P')
     message("mean Lambda = ",
-            round(mean(phylotest[,1]), 2),
-            " +/- ", round(sd(phylotest[,1]), 2)
+            round(mean(phylotest$lambda), 2),
+            " +/- ", round(sd(phylotest$lambda), 2)
             )
     return(phylotest)
 }
@@ -120,16 +112,15 @@ GetNodeAncFast <- function(trees, node='root', factors) {
     # Args:
     #   trees: a "multiPhylo" object w. multiple trees
     #   node: internal node(s) for values estimation
-    #   factors: a set of contionuous factors in data.frame
+    #   factors: a set of contionuous factors in data.frame or matrix
     if(!inherits(trees,"multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
-    message('Estimating ancestor characters with BM model...')
-    pb <- txtProgressBar(style=3, min=0, max=length(trees))
+    cat('Estimating ancestor characters with BM model.')
     # remember if there are several nodes:
     nodes <- (length(node) > 1)
     # now work with each tree
     for (i in 1:length(trees)) {
-        setTxtProgressBar(pb, i)
+        cat('.')
         # if default node is root
         if (length(node) == 1 && node == 'root')
             node <- phangorn::getRoot(trees[[i]])
@@ -189,6 +180,7 @@ GetNodeAncFast <- function(trees, node='root', factors) {
         rownames(ancNiche) <- c(1:length(trees))
         colnames(ancNiche) <- c(1:length(factors))
     }
+    cat('Done\n')
     return(ancNiche)
 }
 
@@ -199,10 +191,10 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
     # Args:
     #   trees: a "multiPhylo" object w. multiple trees
     #   node: internal node(s) for values estimation
-    #   factors: a set of contionuous factors in data.frame
+    #   factor: a set of contionuous factors in data.frame
     if(!inherits(trees, "multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
-    message('Estimating ancestor characters with best-fit model...')
+    message('Estimating ancestor characters with best-fit model')
     ncores <- parallel::detectCores()
     cont.model <- character()
     if (length(node) > 1) {
@@ -214,7 +206,7 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
     if ( max(trees[[1]]$edge.length) < 1 )
         trees <- PhyloRescale(trees, times=100)
     # work with each tree in set
-    pb <- txtProgressBar(style=3, min=0, max=length(trees))
+    cat('Fitting models and obtaining ancestral values.')
     for (i in 1:length(trees)) {
         # fit models
         bm <- geiger::fitContinuous(trees[[i]], factor, model="BM", ncores=ncores)
@@ -227,21 +219,22 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
         # if something wrong - change selected
         if ((sort(aicc)[1] - sort(aicc)[2]) < 4)
             selected <- names( sort(aicc)[2] )
-        if ((selected == 'OU' && ou$opt$alpha == b$bnd[1,2])
-            && (selected == 'EB' && eb$opt$a == b$bnd[1,2]))
+        if ((selected == 'OU' && ou$opt$alpha == ou$bnd[1,2])
+            && (selected == 'EB' && eb$opt$a == eb$bnd[1,2]))
             selected <- 'BM';
-        if (selected == 'OU' && ou$opt$alpha == b$bnd[1,2])
+        if (selected == 'OU' && ou$opt$alpha == ou$bnd[1,2])
             selected <- names(sort(aicc[names(aicc)!='OU']))[1]
-        if (selected == 'EB' && eb$opt$a == b$bnd[1,2])
+        if (selected == 'EB' && eb$opt$a == eb$bnd[1,2])
             selected <- names(sort(aicc[names(aicc)!='EB']))[1]
         cont.model[i] <- selected
         # message("Tree no.", i, "preferred model:", selected);
         # message( 'BM:', aicc[1], 'OU:', aicc[2], 'EB:', aicc[3] );
         # now fit tree to model
+        cat('.')
         if (selected == 'OU') {
             tree <- geiger::rescale(trees[[i]], model='OU', alpha=ou$opt$alpha)
         } else if (selected == 'EB') {
-            tree <- geiger::rescale(trees[[i]], model='EB', alpha=eb$opt$a)
+            tree <- geiger::rescale(trees[[i]], model='EB', a=eb$opt$a, sigsq=bm$opt$sigsq)
         } else {
             tree <- geiger::rescale(trees[[i]], model='BM', sigsq=bm$opt$sigsq)
         }
@@ -261,10 +254,10 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
         } else {
             # if selected the only node - combine all estimations in vector
             temp.fastAnc   <- temp.fastAnc[names(temp.fastAnc) == node]
-            cont.states[i] <- temp.fastAnc
+            cont.states[[i]] <- temp.fastAnc
         }
-        setTxtProgressBar(pb, i)
     }
+    cat('Done\n')
     result <- list()
     result$selected <- cont.model
     result$states <- cont.states
@@ -272,7 +265,7 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
 }
 
 GetDistrByPred <- function(stack, predictors,
-                           boost=.05, checkIfStop=F, progress=F) {
+                           boost=.05, checkIfStop=F) {
     # Get approximate distribution for each layer in stack by predictors values
     # use raster
     # Args:
@@ -286,11 +279,7 @@ GetDistrByPred <- function(stack, predictors,
     for (i in 1:length(stack[1])) {
         cat('.')
         layerVal.list <- unique(round(predictors[,i]))
-        if (progress)
-            pb <- txtProgressBar(style=3, max=length(layerVal.list), min=0)
         for (j in 1:length(layerVal.list)) {
-            if (progress)
-                setTxtProgressBar(pb, j);
             layerVal <- layerVal.list[j]
             if (boost > 0) {
                 if (layerVal > 0) {
@@ -335,17 +324,13 @@ GetDistrByPred <- function(stack, predictors,
         return(layer.list)
 }
 
-OverlapLayers <- function(list, stopIfNA=F, progress=F) {
+OverlapLayers <- function(list, stopIfNA=F) {
     # Overlaps list of Raster layers with same size to ingle layer
     # use raster
     # Args:
     #   list: list of Raster objects produced by GetDistrByPred function
     #   stopIfNA: stop if all values in resulting layer is NA
-    if (progress)
-        pb <- txtProgressBar(style=3, min=0, max=length(list))
     for (i in 1:length(list)) {
-        if (progress)
-            setTxtProgressBar(pb, i)
         if ( i > 1) {
             layer.result <- layer.result*list[[i]]
         } else {

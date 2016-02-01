@@ -30,7 +30,7 @@ AncNiche.Save <- function(anc.niche, pca.wrapper, output.path){
     if ('models' %in% names(anc.niche)) {
         write.csv(anc.niche$models, file.path(output.path, 'phylo.data/models.csv'), quote=F, row.names=F)
     }
-    # Save states
+    # # Save states
     if (class(.phylo.states) == 'list') {
         for (i in 1:length(.phylo.states)) {
             write.csv(.phylo.states[i],

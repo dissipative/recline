@@ -1,7 +1,7 @@
 AncNiche <- function(trees,
                           best.tree,
                           pca.wrapper,
-                          outgroup,
+                          outgroup=F,
                           nodes,
                           trees.sample=100,
                           trees.burnin=20,
@@ -34,9 +34,11 @@ AncNiche <- function(trees,
 
     # Process trees
     .bestTree <- ape::ladderize(best.tree)
-    .bestTree <- DropTip(.bestTree, outgroup)
     .newtrees <- GetFraction(trees, burnin=trees.burnin, sample=trees.sample)
-    .newtrees <- DropTip(.newtrees, outgroup)
+    if (outgroup != F) {
+        .bestTree <- DropTip(.bestTree, outgroup)
+        .newtrees <- DropTip(.newtrees, outgroup)
+    }
     result$bestTree <- .bestTree
 
     # Select pca data with ID = tree tips:
@@ -53,6 +55,7 @@ AncNiche <- function(trees,
     # Check phylogenetic signal (Lambda) from selected PCA data
     if (do.lambda) {
         for (j in 1:.pca.dim) {
+            message('Estimating phylogenetic sygnal for PC ', j)
             factor <- .phylo.pca[,j]
             names(factor) <- rownames(.phylo.pca)
             .temp.lambda <- MultiplePhylosig(.newtrees, factor)
@@ -79,17 +82,26 @@ AncNiche <- function(trees,
     result$nodes <- nodes
     if (do.models) {
         for (j in 1:.pca.dim) {
-            message('PC', j, ' started..')
+            message('PC', j, ' started')
             factor <- .phylo.pca[,j]
             names(factor) <- rownames(.phylo.pca)
             .temp <- GetNodeAncSlow(.newtrees, factor, node=nodes)
-            if (j > 1) {
-                .states <- cbind(.states, .temp$states)
-                .models <- cbind(.models, .temp$selected)
-
+            if (length(nodes) > 1) {
+                .states <- list()
+                .models <- list()
+                for (i in 1:length(nodes)) {
+                    .states[paste0('node', as.character(nodes[i]))][j] <- .temp$states[i]
+                    .models[paste0('node', as.character(nodes[i]))][j] <- .temp$models[i]
+                }
             } else {
-                .states <- .temp$states
-                .models <- .temp$selected
+                if (j > 1) {
+                    .states <- cbind(.states, .temp$states)
+                    .models <- cbind(.models, .temp$selected)
+
+                } else {
+                    .states <- .temp$states
+                    .models <- .temp$selected
+                }
             }
         }
         result$models <- .models

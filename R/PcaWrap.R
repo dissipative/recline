@@ -41,6 +41,7 @@ PcaWrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
     colnames(.result.presvals)[2] <- "Type"
     colnames(.result.presvals)[3] <- "Clade"
     .result.presvals <- .result.presvals[complete.cases(.result.presvals),]
+    if (nrow(.result.presvals) == 0) stop('No predictor values for given coordinates!')
 
     # PCA
     message('Performing PCA.')

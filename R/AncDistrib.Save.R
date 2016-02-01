@@ -24,13 +24,13 @@ AncDistrib.Save <- function(anc.distrib, output.path){
     if (length(.phylo.ancNode) > 1) { # multiple-node case
         for (i in 1:length(.anc.restored)) {
             write.csv(.anc.restored[[i]],
-                paste0(output.path, '/presvals.node', .phylo.ancNode[i],'.csv'),
+                file=paste0(output.path, '/presvals.node', .phylo.ancNode[i],'.csv'),
                 quote=F
                 )
 
             # Save produced coordinates
             write.csv(.points[[i]],
-                filename=paste0(output.path, '/coords.x', .boost,'.node', .phylo.ancNode[i],'.csv'),
+                file=paste0(output.path, '/coords.x', .boost[[i]],'.node', .phylo.ancNode[i],'.csv'),
                 quote=F
                 )
         }
@@ -44,13 +44,13 @@ AncDistrib.Save <- function(anc.distrib, output.path){
             )
     } else { # single-node case
         write.csv(.anc.restored,
-            paste0(output.path, '/presvals.node', .phylo.ancNode,'.csv'),
+            file=paste0(output.path, '/presvals.node', .phylo.ancNode,'.csv'),
             quote=F
             )
 
         # Save produced coordinates
         write.csv(.points,
-            filename=paste0(output.path, '/coords.x', .boost,'.node', .phylo.ancNode,'.csv'),
+            file=paste0(output.path, '/coords.x', .boost,'.node', .phylo.ancNode,'.csv'),
             quote=F
             )
 

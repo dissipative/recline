@@ -22,31 +22,33 @@ PcaWrap.Save <- function(pca.wrapper, output.path) {
     .pca.dim <- ncol(.pca$li)
     .pca.summ <- factoextra::facto_summarize(.pca2, element="var", axes=1:.pca.dim)
 
-    svg(file.path(output.path, 'pca.plots/ind.biplot.svg'), width=10, height=10)
-    factoextra::fviz_pca_ind(.pca2, geom = "point",
+    .ind.biplot <- factoextra::fviz_pca_ind(.pca2, geom = "point",
                  habillage=.result.presvals$Clade, addEllipses=TRUE,
                  ellipse.level= 0.95) +
         ggplot2::scale_color_brewer(palette="Set1") +
         ggplot2::theme_minimal()
-    dev.off()
+    ggplot2::ggsave(filename=(file.path(output.path, 'pca.plots/ind.biplot.svg')),
+            plot=.ind.biplot, width=10, height=10)
 
-    svg(file.path(output.path, 'pca.plots/var.biplot.svg'), width=10, height=10)
-    factoextra::fviz_pca_var(.pca2, col.var="contrib") +
+
+    .var.biplot <- factoextra::fviz_pca_var(.pca2, col.var="contrib") +
         ggplot2::scale_color_gradient2(low="white", mid="blue",
                               high="red", midpoint = min(.pca.summ$contrib)) +
         ggplot2::theme_minimal()
-    dev.off()
+    ggplot2::ggsave(filename=(file.path(output.path, 'pca.plots/var.biplot.svg')),
+        plot=.var.biplot, width=10, height=10)
 
     .pca.plotList <- list()
     for (i in 1:.pca.dim) .pca.plotList[[i]] <- factoextra::fviz_contrib(.pca, choice='var', axes=i)
     for (i in 1:.pca.dim) {
-        svg(paste0(output.path, '/pca.plots/contrib.dim', i ,'.svg'), width=10, height=7)
-        print(.pca.plotList[[i]])
-        dev.off()
+        ggplot2::ggsave(filename=paste0(output.path, '/pca.plots/contrib.dim', i ,'.svg'),
+            plot=.pca.plotList[[i]], width=10, height=7)
     }
-    svg(file.path(output.path, 'pca.plots/contrib.all.svg'), width=10, height=7)
-    print(factoextra::fviz_contrib(.pca2, choice='var', axes=1:.pca.dim))
-    dev.off()
+
+    .contrib.all <- factoextra::fviz_contrib(.pca2, choice='var', axes=1:.pca.dim)
+    ggplot2::ggsave(filename=file.path(output.path, 'pca.plots/contrib.all.svg'),
+            plot=.contrib.all, width=10, height=7)
+
 
     # Save PCA data
     .result.pca <- cbind(.result.presvals[,1:3], .pca2$x[,1:.pca.dim])
