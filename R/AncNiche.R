@@ -81,27 +81,34 @@ AncNiche <- function(trees,
         nodes <- 'root'
     result$nodes <- nodes
     if (do.models) {
+        .states <- list()
+        .models <- list()
         for (j in 1:.pca.dim) {
             message('PC', j, ' started')
             factor <- .phylo.pca[,j]
             names(factor) <- rownames(.phylo.pca)
             .temp <- GetNodeAncSlow(.newtrees, factor, node=nodes)
-            if (length(nodes) > 1) {
-                .states <- list()
-                .models <- list()
+            if (length(nodes) > 1) { # add states for selected nodes
                 for (i in 1:length(nodes)) {
-                    .states[paste0('node', as.character(nodes[i]))][j] <- .temp$states[i]
-                    .models[paste0('node', as.character(nodes[i]))][j] <- .temp$models[i]
+                    if (j > 1) {
+                        .states[[i]] <- cbind(.states[[i]], .temp$states[[i]])
+
+                    } else {
+                        .states[[paste0('node', as.character(nodes[i]))]] <- .temp$states[[i]]
+                    }
                 }
             } else {
                 if (j > 1) {
                     .states <- cbind(.states, .temp$states)
-                    .models <- cbind(.models, .temp$selected)
-
                 } else {
                     .states <- .temp$states
-                    .models <- .temp$selected
                 }
+            } # then append models information
+            if (j > 1) {
+                .models <- cbind(.models, .temp$selected)
+
+            } else {
+                .models <- .temp$selected
             }
         }
         result$models <- .models
