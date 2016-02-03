@@ -20,33 +20,33 @@ PcaWrap.Save <- function(pca.wrapper, output.path) {
     dev.off()
 
     .pca.dim <- ncol(.pca$li)
-    .pca.summ <- factoextra::facto_summarize(.pca2, element="var", axes=1:.pca.dim)
+    .pca.summ <- facto_summarize(.pca2, element="var", axes=1:.pca.dim)
 
-    .ind.biplot <- factoextra::fviz_pca_ind(.pca2, geom = "point",
+    .ind.biplot <- fviz_pca_ind(.pca2, geom = "point",
                  habillage=.result.presvals$Clade, addEllipses=TRUE,
                  ellipse.level= 0.95) +
-        ggplot2::scale_color_brewer(palette="Set1") +
-        ggplot2::theme_minimal()
-    ggplot2::ggsave(filename=(file.path(output.path, 'pca.plots/ind.biplot.svg')),
+        scale_color_brewer(palette="Set1") +
+        theme_minimal()
+    ggsave(filename=(file.path(output.path, 'pca.plots/ind.biplot.svg')),
             plot=.ind.biplot, width=10, height=10)
 
 
-    .var.biplot <- factoextra::fviz_pca_var(.pca2, col.var="contrib") +
-        ggplot2::scale_color_gradient2(low="white", mid="blue",
+    .var.biplot <- fviz_pca_var(.pca2, col.var="contrib") +
+        scale_color_gradient2(low="white", mid="blue",
                               high="red", midpoint = min(.pca.summ$contrib)) +
-        ggplot2::theme_minimal()
-    ggplot2::ggsave(filename=(file.path(output.path, 'pca.plots/var.biplot.svg')),
+        theme_minimal()
+    ggsave(filename=(file.path(output.path, 'pca.plots/var.biplot.svg')),
         plot=.var.biplot, width=10, height=10)
 
     .pca.plotList <- list()
     for (i in 1:.pca.dim) .pca.plotList[[i]] <- factoextra:::fviz_contrib(.pca, choice='var', axes=i)
     for (i in 1:.pca.dim) {
-        ggplot2::ggsave(filename=paste0(output.path, '/pca.plots/contrib.dim', i ,'.svg'),
+        ggsave(filename=paste0(output.path, '/pca.plots/contrib.dim', i ,'.svg'),
             plot=.pca.plotList[[i]], width=10, height=7)
     }
 
     .contrib.all <- factoextra:::fviz_contrib(.pca2, choice='var', axes=1:.pca.dim)
-    ggplot2::ggsave(filename=file.path(output.path, 'pca.plots/contrib.all.svg'),
+    ggsave(filename=file.path(output.path, 'pca.plots/contrib.all.svg'),
             plot=.contrib.all, width=10, height=7)
 
 

@@ -28,8 +28,8 @@ AncDistrib <- function(anc.niche,
     result$nodes <- anc.niche$nodes
 
     # Restore only most important variables in used dimensions
-    .pca.variables <- factoextra::facto_summarize(.pca2, 'var', axes=1:.pca.dim)
-    .pca.eig <- factoextra::get_eigenvalue(.pca2)[1:.pca.dim, 1]
+    .pca.variables <- facto_summarize(.pca2, 'var', axes=1:.pca.dim)
+    .pca.eig <- get_eigenvalue(.pca2)[1:.pca.dim, 1]
     .pca.theo_contrib <- sum(100/length(.pca.variables$contrib) * .pca.eig)
     .paleo.use <- which(.pca.variables$contrib > .pca.theo_contrib)
 
@@ -49,7 +49,7 @@ AncDistrib <- function(anc.niche,
         pattern=paste0('*.', bioclim.ext), full.names=T
         )
 
-    .paleo.stack <- raster::stack(.paleo.geoFiles[.paleo.use])
+    .paleo.stack <- stack(.paleo.geoFiles[.paleo.use])
 
     # Search for places matching restored predictors
     if (class(.anc.restored) == 'list') {
@@ -63,7 +63,7 @@ AncDistrib <- function(anc.niche,
                                               predictors=.anc.restored[[i]],
                                               boost=.predictors.boost,
                                               checkIfStop=T)
-                if ( is.null(.paleo.distrib) || all(is.na(raster::values(.paleo.distrib))) ) {
+                if ( is.null(.paleo.distrib) || all(is.na(values(.paleo.distrib))) ) {
                     .predictors.boost <- .predictors.boost + boost.step
                     message('Boosting predictors values range by ', .predictors.boost)
                 } else {
@@ -74,7 +74,7 @@ AncDistrib <- function(anc.niche,
             result$boost[i] <- .predictors.boost
             # Extract points
             .paleo.distrib[.paleo.distrib == 0] <- NA
-            result$points[[i]] <- raster::rasterToPoints(.paleo.distrib)
+            result$points[[i]] <- rasterToPoints(.paleo.distrib)
             .predictors.boost <- start.boost
         }
         names(result$distrib) <- result$nodes
@@ -86,7 +86,7 @@ AncDistrib <- function(anc.niche,
                                           predictors=.anc.restored,
                                           boost=.predictors.boost,
                                           checkIfStop=T)
-            if ( is.null(.paleo.distrib) || all(is.na(raster::values(.paleo.distrib))) ) {
+            if ( is.null(.paleo.distrib) || all(is.na(values(.paleo.distrib))) ) {
                 .predictors.boost <- .predictors.boost + boost.step
                 message('Now boosting presvals range by ', .predictors.boost)
             } else {
@@ -97,7 +97,7 @@ AncDistrib <- function(anc.niche,
         result$distrib <- .paleo.distrib
         result$boost <- .predictors.boost
         .paleo.distrib[.paleo.distrib == 0] <- NA
-        result$points <- raster::rasterToPoints(.paleo.distrib)
+        result$points <- rasterToPoints(.paleo.distrib)
     }
     class(result) <- 'anc.distrib'
     return(result)

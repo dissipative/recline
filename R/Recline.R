@@ -59,16 +59,16 @@ GetFraction <- function(trees, burnin=20, sample=100) {
 
 DropTip <- function(phylo, tipsToDrop=c(1,2)) {
     # Drop tip from tree or set of trees
-    # Wrapper function for ape::drop.tip
+    # Wrapper function for ape drop.tip
     # Args:
     #   phylo: a "phylo" or  "multiPhylo" object with phylogenetic tree or trees
     #   tipsToDrop: a vector of tree tips to drop from the tree
     if(!inherits(phylo, "phylo") && !inherits(phylo, "multiPhylo"))
         stop("phylo should be an object of class \"phylo\" or \"multiPhylo\".")
     if (class(phylo) == 'phylo')
-        return( ape::drop.tip(phylo, tipsToDrop) )
+        return( drop.tip(phylo, tipsToDrop) )
     if (class(phylo) == 'multiPhylo'){
-        newtrees <- lapply(phylo, ape::drop.tip, tip=tipsToDrop)
+        newtrees <- lapply(phylo, drop.tip, tip=tipsToDrop)
         class(newtrees) <- "multiPhylo"
         return(newtrees)
     }
@@ -92,11 +92,11 @@ PhyloRescale <- function (trees, times=1000) {
 
 MultiplePhylosig <- function (trees, testdata) {
     # Wrapper function for phylogenetic signal test (lambda estimation)
-    # use phytools::phylosig
+    # use phytools
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   testdata: a vector with continuous trait with names matching trees tips
-    phylotest <- as.data.frame(t(sapply(trees, phytools::phylosig, x=testdata, test=T, method="lambda")))
+    phylotest <- as.data.frame(t(sapply(trees, phylosig, x=testdata, test=T, method="lambda")))
     phylotest <- as.data.frame(cbind(unlist(phylotest$lambda), unlist(phylotest$P)))
     colnames(phylotest) <- c('lambda', 'P')
     message("mean Lambda = ",
@@ -123,7 +123,7 @@ GetNodeAncFast <- function(trees, node='root', factors) {
         cat('.')
         # if default node is root
         if (length(node) == 1 && node == 'root')
-            node <- phangorn::getRoot(trees[[i]])
+            node <- getRoot(trees[[i]])
         # result class differs in case of node numbers
         if (nodes) {
             temp.anc <- list()
@@ -134,7 +134,7 @@ GetNodeAncFast <- function(trees, node='root', factors) {
         for (j in 1:length(factors)) {
             factor <- factors[,j]
             names(factor) <- rownames(factors)
-            temp.fastAnc <- phytools::fastAnc(trees[[i]], factor)
+            temp.fastAnc <- fastAnc(trees[[i]], factor)
             if (nodes) {
                 # collect characters for each selected node in a list
                 for (k in 1:length(node)) {
@@ -195,7 +195,7 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
     if(!inherits(trees, "multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
     message('Estimating ancestor characters with best-fit model')
-    ncores <- parallel::detectCores()
+    ncores <- detectCores()
     cont.model <- character()
     if (length(node) > 1) {
         cont.states <- list()
@@ -209,9 +209,9 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
     cat('Fitting models and obtaining ancestral values.')
     for (i in 1:length(trees)) {
         # fit models
-        bm <- geiger::fitContinuous(trees[[i]], factor, model="BM", ncores=ncores)
-        ou <- geiger::fitContinuous(trees[[i]], factor, model="OU", ncores=ncores)
-        eb <- geiger::fitContinuous(trees[[i]], factor, model="EB", ncores=ncores)
+        bm <- fitContinuous(trees[[i]], factor, model="BM", ncores=ncores)
+        ou <- fitContinuous(trees[[i]], factor, model="OU", ncores=ncores)
+        eb <- fitContinuous(trees[[i]], factor, model="EB", ncores=ncores)
         # sort them by AICc
         aicc <- c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc)
         names(aicc) <- c("BM","OU","EB")
@@ -232,15 +232,15 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
         # now fit tree to model
         cat('.')
         if (selected == 'OU') {
-            tree <- geiger::rescale(trees[[i]], model='OU', alpha=ou$opt$alpha)
+            tree <- rescale(trees[[i]], model='OU', alpha=ou$opt$alpha)
         } else if (selected == 'EB') {
-            tree <- geiger::rescale(trees[[i]], model='EB', a=eb$opt$a, sigsq=bm$opt$sigsq)
+            tree <- rescale(trees[[i]], model='EB', a=eb$opt$a, sigsq=bm$opt$sigsq)
         } else {
-            tree <- geiger::rescale(trees[[i]], model='BM', sigsq=bm$opt$sigsq)
+            tree <- rescale(trees[[i]], model='BM', sigsq=bm$opt$sigsq)
         }
         if (length(node) == 1 && node == 'root')
-            node <- phangorn::getRoot(tree)
-        temp.fastAnc <- phytools::fastAnc(tree, factor)
+            node <- getRoot(tree)
+        temp.fastAnc <- fastAnc(tree, factor)
         if (length(node) > 1) {
             # collect characters for each selected node in a list
             for (k in 1:length(node)) {
@@ -302,11 +302,11 @@ GetDistrByPred <- function(stack, predictors,
                 layer.merged <- layer.temp
             }
         }
-        layer.merged <- layer.merged/max(raster::values(layer.merged), na.rm=T)
+        layer.merged <- layer.merged/max(values(layer.merged), na.rm=T)
         layer.list[i] <- layer.merged
         if (checkIfStop) {
             layer.result <- OverlapLayers(layer.list)
-            exit <- all(is.na(raster::values(layer.result)))
+            exit <- all(is.na(values(layer.result)))
         } else {
             exit <- F
         }
@@ -336,11 +336,11 @@ OverlapLayers <- function(list, stopIfNA=F) {
         } else {
             layer.result <- list[[i]]
         }
-        if ( all(is.na(raster::values(layer.result))) && stopIfNA ) {
+        if ( all(is.na(values(layer.result))) && stopIfNA ) {
             message('Breaking merge at ', i,' layer')
             break
         }
     }
-    layer.result <- layer.result/max(raster::values(layer.result), na.rm=T)
+    layer.result <- layer.result/max(values(layer.result), na.rm=T)
     return(layer.result)
 }

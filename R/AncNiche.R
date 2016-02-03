@@ -33,7 +33,7 @@ AncNiche <- function(trees,
         outgroup <- strsplit(gsub(" ", "", outgroup), ",")[[1]]
 
     # Process trees
-    .bestTree <- ape::ladderize(best.tree)
+    .bestTree <- ladderize(best.tree)
     .newtrees <- GetFraction(trees, burnin=trees.burnin, sample=trees.sample)
     if (outgroup != F) {
         .bestTree <- DropTip(.bestTree, outgroup)
@@ -55,7 +55,7 @@ AncNiche <- function(trees,
     # Check phylogenetic signal (Lambda) from selected PCA data
     if (do.lambda) {
         for (j in 1:.pca.dim) {
-            message('Estimating phylogenetic sygnal for PC ', j)
+            message('Estimating phylogenetic signal for PC ', j)
             factor <- .phylo.pca[,j]
             names(factor) <- rownames(.phylo.pca)
             .temp.lambda <- MultiplePhylosig(.newtrees, factor)
