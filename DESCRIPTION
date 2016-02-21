@@ -6,9 +6,17 @@ Date: 2016-01-17
 Author: Artem A. Frolov [aut, cre, cph]
 Maintainer: Artem A. Frolov <af.atgc@gmail.com>
 License: GPL (>= 2)
-Depends: 
-    R (>= 2.10)
-Imports: 
+Depends:
+    R (>= 2.10),
+    phytools,
+    phangorn,
+    geiger,
+    raster,
+    ade4,
+    factoextra,
+    reshape2,
+    ggplot2
+Imports:
     ape,
     phytools,
     phangorn,
