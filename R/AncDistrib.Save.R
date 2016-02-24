@@ -24,13 +24,13 @@ AncDistrib.Save <- function(anc.distrib, output.path){
     if (length(.phylo.ancNode) > 1) { # multiple-node case
         for (i in 1:length(.anc.restored)) {
             write.csv(.anc.restored[[i]],
-                file=paste0(output.path, '/presvals.node', .phylo.ancNode[i],'.csv'),
+                file=paste0(output.path, '/anc.distrib/presvals.node', .phylo.ancNode[i],'.csv'),
                 quote=F
                 )
 
             # Save produced coordinates
             write.csv(.points[[i]],
-                file=paste0(output.path, '/coords.x', .boost[[i]],'.node', .phylo.ancNode[i],'.csv'),
+                file=paste0(output.path, '/anc.distrib/coords.x', .boost[[i]],'.node', .phylo.ancNode[i],'.csv'),
                 quote=F
                 )
         }
@@ -38,25 +38,25 @@ AncDistrib.Save <- function(anc.distrib, output.path){
         # Save produced layers
         raster::writeRaster(
             .paleo.distrib,
-            file.path(output.path, '/distrib.tif'),
+            file.path(output.path, '/anc.distrib/distrib.tif'),
             format="GTiff", bylayer=T, overwrite=T,
             suffix=paste0('node', .phylo.ancNode, 'x', .boost)
             )
     } else { # single-node case
         write.csv(.anc.restored,
-            file=paste0(output.path, '/presvals.node', .phylo.ancNode,'.csv'),
+            file=paste0(output.path, '/anc.distrib/presvals.node', .phylo.ancNode,'.csv'),
             quote=F
             )
 
         # Save produced coordinates
         write.csv(.points,
-            file=paste0(output.path, '/coords.x', .boost,'.node', .phylo.ancNode,'.csv'),
+            file=paste0(output.path, '/anc.distrib/coords.x', .boost,'.node', .phylo.ancNode,'.csv'),
             quote=F
             )
 
         # Save produced layer
         raster::writeRaster(.paleo.distrib,
-            paste0(output.path, '/distrib.x', .boost,'.node', .phylo.ancNode,'.tif'),
+            paste0(output.path, '/anc.distrib/distrib.x', .boost,'.node', .phylo.ancNode,'.tif'),
             format="GTiff", overwrite=T)
     }
 }
