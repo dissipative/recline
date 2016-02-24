@@ -22,7 +22,7 @@ AncNiche.Save <- function(anc.niche, pca.wrapper, output.path){
         factor <- .phylo.pca[,i]
         names(factor) <- rownames(.phylo.pca)
         svg(paste0(output.path, '/phylo.plots/contMapPC', i ,'.svg'), width=10, height=7)
-        phytools::contMap(anc.niche$bestTree, factor, fsize=0.2, lwd=1)
+        phytools::contMap(anc.niche$bestTree, factor, fsize=0.2, lwd=3)
         dev.off()
     }
 

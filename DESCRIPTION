@@ -15,7 +15,8 @@ Depends:
     ade4,
     factoextra,
     reshape2,
-    ggplot2
+    ggplot2, 
+    parallel
 Imports:
     ape,
     phytools,
@@ -29,10 +30,10 @@ Imports:
     grDevices,
     utils,
     stats
-Description: The package provides several functions for easy and convenient
+Description: The package provides several functions for easy
     obtaining climatic niche of any species or group of specimens by a collection
     of their points of occurrence. Climatic niche space is constructed by PCA of
-    predictors values of each point derived from BIOCLIM variables. It also contains
+    predictors values of each point derived from BIOCLIM (or any given) variables. It also contains
     functions for making a reconstruction of the ancestral climatic niche by given
     ultrametric phylogenetic tree and for estimation of the probable distribution
     area of the ancestor by predictors values restored from PCA.

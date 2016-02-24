@@ -28,14 +28,12 @@ AncNiche <- function(trees,
     .result.presvals <- as.data.frame(pca.wrapper$presvals)
     result <- list()
 
-    # Process outgroup data - remove spaces and convert to combined characters
-    if (inherits(outgroup, 'character') && length(outgroup) == 1)
-        outgroup <- strsplit(gsub(" ", "", outgroup), ",")[[1]]
-
     # Process trees
     .bestTree <- ladderize(best.tree)
     .newtrees <- GetFraction(trees, burnin=trees.burnin, sample=trees.sample)
     if (outgroup != F) {
+        # Process outgroup data - remove spaces and convert to combined characters
+        if (inherits(outgroup, 'character') && length(outgroup) == 1) outgroup <- strsplit(gsub(" ", "", outgroup), ",")[[1]]
         .bestTree <- DropTip(.bestTree, outgroup)
         .newtrees <- DropTip(.newtrees, outgroup)
     }
@@ -43,12 +41,8 @@ AncNiche <- function(trees,
 
     # Select pca data with ID = tree tips:
     .pca.dim <- ncol(.pca$li)
-    .pcaSelect <- match(.bestTree$tip.label, .result.presvals$ID)
-    .phylo.pca <- EmptyDF(colnames=1:.pca.dim)
-    for (i in 1:length(.pcaSelect)) {
-        .phylo.pca[i,] <- .pca2$x[.pcaSelect[i], 1:.pca.dim]
-    }
-    rownames(.phylo.pca) <- .bestTree$tip.label
+    .phylo.pca <- .pca2$x[,1:.pca.dim]
+    rownames(.phylo.pca) <- temp.presvals$ID
     # return .phylo.pca
     result$phylo.pca <- .phylo.pca
 
@@ -56,8 +50,7 @@ AncNiche <- function(trees,
     if (do.lambda) {
         for (j in 1:.pca.dim) {
             message('Estimating phylogenetic signal for PC ', j)
-            factor <- .phylo.pca[,j]
-            names(factor) <- rownames(.phylo.pca)
+            factor <- structure(.phylo.pca[,j], names=rownames(.phylo.pca))
             .temp.lambda <- MultiplePhylosig(.newtrees, factor)
             if (j > 1) {
                 .lambda <- cbind(.lambda, .temp.lambda)
@@ -85,8 +78,7 @@ AncNiche <- function(trees,
         .models <- list()
         for (j in 1:.pca.dim) {
             message('PC', j, ' started')
-            factor <- .phylo.pca[,j]
-            names(factor) <- rownames(.phylo.pca)
+            factor <- structure(.phylo.pca[,j], names=rownames(.phylo.pca))
             .temp <- GetNodeAncSlow(.newtrees, factor, node=nodes)
             if (length(nodes) > 1) { # add states for selected nodes
                 for (i in 1:length(nodes)) {

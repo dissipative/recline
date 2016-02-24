@@ -1,4 +1,4 @@
-export(PcaWrap, PcaWrap.Save, AncNiche, AncNiche.Save, AncDistrib, AncDistrib.Save)
+export(PcaWrap, PcaWrap.Save, AncNiche, AncNiche.Save, AncDistrib, AncDistrib.Save, SampleByGroups)
 
 importFrom(ape, ladderize, drop.tip)
 importFrom(phytools, phylosig, fastAnc, contMap)

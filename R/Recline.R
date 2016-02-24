@@ -132,8 +132,8 @@ GetNodeAncFast <- function(trees, node='root', factors) {
         }
         # obtain ancestor values for each factor dimension
         for (j in 1:length(factors)) {
-            factor <- factors[,j]
-            names(factor) <- rownames(factors)
+            factor <- structure(factors[,j], names=rownames(factors))
+            factor <- factor[names(factor) %in% trees[[i]]$tip.label]
             temp.fastAnc <- fastAnc(trees[[i]], factor)
             if (nodes) {
                 # collect characters for each selected node in a list
@@ -184,7 +184,7 @@ GetNodeAncFast <- function(trees, node='root', factors) {
     return(ancNiche)
 }
 
-GetNodeAncSlow <- function (trees, factor, node='root') {
+GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
     # Estimation of factor values for a given node(s) in a set of trees
     # with fitting different models of char evolution (BM, EB and OU)
     # use phangorn, phytools, geiger, parallel
@@ -195,7 +195,6 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
     if(!inherits(trees, "multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
     message('Estimating ancestor characters with best-fit model')
-    ncores <- detectCores()
     cont.model <- character()
     if (length(node) > 1) {
         cont.states <- list()
@@ -208,10 +207,11 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
     # work with each tree in set
     cat('Fitting models and obtaining ancestral values.')
     for (i in 1:length(trees)) {
+        this.factor <- factor[names(factor) %in% trees[[i]]$tip.label]
         # fit models
-        bm <- fitContinuous(trees[[i]], factor, model="BM", ncores=ncores)
-        ou <- fitContinuous(trees[[i]], factor, model="OU", ncores=ncores)
-        eb <- fitContinuous(trees[[i]], factor, model="EB", ncores=ncores)
+        bm <- fitContinuous(trees[[i]], this.factor, model="BM", ncores=ncores)
+        ou <- fitContinuous(trees[[i]], this.factor, model="OU", ncores=ncores)
+        eb <- fitContinuous(trees[[i]], this.factor, model="EB", ncores=ncores)
         # sort them by AICc
         aicc <- c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc)
         names(aicc) <- c("BM","OU","EB")
@@ -240,7 +240,7 @@ GetNodeAncSlow <- function (trees, factor, node='root') {
         }
         if (length(node) == 1 && node == 'root')
             node <- getRoot(tree)
-        temp.fastAnc <- fastAnc(tree, factor)
+        temp.fastAnc <- fastAnc(tree, this.factor)
         if (length(node) > 1) {
             # collect characters for each selected node in a list
             for (k in 1:length(node)) {
