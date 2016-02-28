@@ -112,7 +112,7 @@ GetNodeAncFast <- function(trees, node='root', factors) {
     # Args:
     #   trees: a "multiPhylo" object w. multiple trees
     #   node: internal node(s) for values estimation
-    #   factors: a set of contionuous factors in data.frame or matrix
+    #   factors: a set of continuous factors in data.frame or matrix
     if(!inherits(trees,"multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
     cat('Estimating ancestor characters with BM model.')
@@ -131,7 +131,7 @@ GetNodeAncFast <- function(trees, node='root', factors) {
             temp.anc <- vector()
         }
         # obtain ancestor values for each factor dimension
-        for (j in 1:length(factors)) {
+        for (j in 1:ncol(factors)) {
             factor <- structure(factors[,j], names=rownames(factors))
             factor <- factor[names(factor) %in% trees[[i]]$tip.label]
             temp.fastAnc <- fastAnc(trees[[i]], factor)
