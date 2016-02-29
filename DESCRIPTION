@@ -1,7 +1,7 @@
 Package: recline
 Type: Package
 Title: Reconstruction of Climatic Niche by phylogenetic and geographic data
-Version: 0.0.0.9067
+Version: 0.0.0.9068
 Date: 2016-01-17
 Author: Artem A. Frolov [aut, cre, cph]
 Maintainer: Artem A. Frolov <af.atgc@gmail.com>

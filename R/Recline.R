@@ -204,7 +204,9 @@ GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
     # rescale data if need
     if (min(factor) < 1 || max(factor) > 1) {
       abs.max <- max(abs(factor))
-      factor <- factor/stranger
+      factor <- factor/abs.max
+    } else {
+      abs.max <- 1
     }
     # work with each tree in set
     cat('Fitting models and obtaining ancestral values.')
@@ -241,7 +243,7 @@ GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
         }
         if (length(node) == 1 && node == 'root')
             node <- getRoot(tree)
-        temp.fastAnc <- fastAnc(tree, this.factor)*stranger
+        temp.fastAnc <- fastAnc(tree, this.factor)*abs.max
         if (length(node) > 1) {
             # collect characters for each selected node in a list
             for (k in 1:length(node)) {
