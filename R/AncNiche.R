@@ -74,6 +74,7 @@ AncNiche <- function(trees,
         nodes <- 'root'
     result$nodes <- nodes
     if (do.models) {
+        .states <- list()
         for (j in 1:.pca.dim) {
             message('PC', j, ' started')
             factor <- structure(.phylo.pca[,j], names=rownames(.phylo.pca))

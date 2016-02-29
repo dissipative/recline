@@ -42,14 +42,13 @@ AncDistrib <- function(anc.niche,
         .anc.restored <- t(t(.phylo.states %*% t(.pca2$rotation[,1:.pca.dim])) * .pca2$scale + .pca2$center)[,.paleo.use]
     }
     result$anc.presvals <- .anc.restored
-
+    
     # Load ancient bioclim data
     .paleo.geoFiles <- list.files(
         path=bioclim.past.data,
         pattern=paste0('*.', bioclim.ext), full.names=T
         )
-
-    .paleo.stack <- stack(.paleo.geoFiles[.paleo.use])
+    .paleo.stack <- raster::stack(.paleo.geoFiles[.paleo.use])
 
     # Search for places matching restored predictors
     if (class(.anc.restored) == 'list') {

@@ -201,9 +201,11 @@ GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
     } else {
         cont.states <- vector()
     }
-    # rescale tree if need
-    if ( max(trees[[1]]$edge.length) < 1 )
-        trees <- PhyloRescale(trees, times=100)
+    # rescale data if need
+    if (min(factor) < 1 || max(factor) > 1) {
+      abs.max <- max(abs(factor))
+      factor <- factor/stranger
+    }
     # work with each tree in set
     cat('Fitting models and obtaining ancestral values.')
     for (i in 1:length(trees)) {
@@ -213,19 +215,18 @@ GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
         ou <- fitContinuous(trees[[i]], this.factor, model="OU", ncores=ncores)
         eb <- fitContinuous(trees[[i]], this.factor, model="EB", ncores=ncores)
         # sort them by AICc
-        aicc <- c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc)
-        names(aicc) <- c("BM","OU","EB")
+        aicc <- structure(c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc), names=c("BM","OU","EB"))
         selected <- names( sort(aicc)[1] )
         # if something wrong - change selected
-        if ((sort(aicc)[1] - sort(aicc)[2]) < 4)
+        if ((sort(aicc)[1] - sort(aicc)[2]) < 4 && names(sort(aicc)[2]) == 'BM')
             selected <- names( sort(aicc)[2] )
-        if ((selected == 'OU' && ou$opt$alpha == ou$bnd[1,2])
-            && (selected == 'EB' && eb$opt$a == eb$bnd[1,2]))
-            selected <- 'BM';
-        if (selected == 'OU' && ou$opt$alpha == ou$bnd[1,2])
-            selected <- names(sort(aicc[names(aicc)!='OU']))[1]
-        if (selected == 'EB' && eb$opt$a == eb$bnd[1,2])
-            selected <- names(sort(aicc[names(aicc)!='EB']))[1]
+        # if ((selected == 'OU' && ou$opt$alpha == ou$bnd[1,2])
+        #     && (selected == 'EB' && eb$opt$a == eb$bnd[1,2]))
+        #     selected <- 'BM';
+        # if (selected == 'OU' && ou$opt$alpha == ou$bnd[1,2])
+        #     selected <- names(sort(aicc[names(aicc)!='OU']))[1]
+        # if (selected == 'EB' && eb$opt$a == eb$bnd[1,2])
+        #     selected <- names(sort(aicc[names(aicc)!='EB']))[1]
         cont.model[i] <- selected
         # message("Tree no.", i, "preferred model:", selected);
         # message( 'BM:', aicc[1], 'OU:', aicc[2], 'EB:', aicc[3] );
@@ -240,7 +241,7 @@ GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
         }
         if (length(node) == 1 && node == 'root')
             node <- getRoot(tree)
-        temp.fastAnc <- fastAnc(tree, this.factor)
+        temp.fastAnc <- fastAnc(tree, this.factor)*stranger
         if (length(node) > 1) {
             # collect characters for each selected node in a list
             for (k in 1:length(node)) {
