@@ -219,19 +219,13 @@ GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
         # sort them by AICc
         aicc <- structure(c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc), names=c("BM","OU","EB"))
         selected <- names( sort(aicc)[1] )
-        # if something wrong - change selected
-        if ((sort(aicc)[1] - sort(aicc)[2]) < 4 && names(sort(aicc)[2]) == 'BM')
-            selected <- names( sort(aicc)[2] )
-        # if ((selected == 'OU' && ou$opt$alpha == ou$bnd[1,2])
-        #     && (selected == 'EB' && eb$opt$a == eb$bnd[1,2]))
-        #     selected <- 'BM';
-        # if (selected == 'OU' && ou$opt$alpha == ou$bnd[1,2])
-        #     selected <- names(sort(aicc[names(aicc)!='OU']))[1]
-        # if (selected == 'EB' && eb$opt$a == eb$bnd[1,2])
-        #     selected <- names(sort(aicc[names(aicc)!='EB']))[1]
+        # if diff too small - change selected
+        if (abs((sort(aicc)[1] - sort(aicc)[2])) < 4 && names(sort(aicc)[2]) == 'BM' || 
+            abs((sort(aicc)[1] - sort(aicc)[2])) < 4 && abs((sort(aicc)[2] - sort(aicc)[3])) < 4)
+          selected <- 'BM'
         cont.model[i] <- selected
-        # message("Tree no.", i, "preferred model:", selected);
-        # message( 'BM:', aicc[1], 'OU:', aicc[2], 'EB:', aicc[3] );
+        # message("Tree no.", i, " preferred model: ", selected);
+        # message( 'BM:', round(aicc[1], 2), ' OU:', round(aicc[2], 2), ' EB:', round(aicc[3], 2) );
         # now fit tree to model
         cat('.')
         if (selected == 'OU') {
@@ -242,7 +236,7 @@ GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
             tree <- rescale(trees[[i]], model='BM', sigsq=bm$opt$sigsq)
         }
         if (length(node) == 1 && node == 'root')
-            node <- getRoot(tree)
+            node <- phangorn::getRoot(tree)
         temp.fastAnc <- fastAnc(tree, this.factor)*abs.max
         if (length(node) > 1) {
             # collect characters for each selected node in a list
