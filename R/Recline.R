@@ -1,6 +1,8 @@
+
+
 # internal functions (non-imported)
 
-CheckDir <- function(path){
+CheckDir <- function(path) {
     # Check if directory exist
     if (!dir.exists(path)) {
         dir.create(path)
@@ -8,9 +10,11 @@ CheckDir <- function(path){
     }
 }
 
-EmptyDF <- function(colnames=c('a', 'b', 'c')){
+EmptyDF <- function(colnames = c('a', 'b', 'c')) {
     # Create empty data.frame with fixed column names
-    newDF <- data.frame(matrix(NA,nrow=0,ncol=length(colnames)), stringsAsFactors=FALSE)
+    newDF <-
+        data.frame(matrix(NA, nrow = 0, ncol = length(colnames)), stringsAsFactors =
+                       FALSE)
     colnames(newDF) <- colnames
     return(newDF)
 }
@@ -23,67 +27,104 @@ EvPlot <- function(ev) {
     # source ("http://www.davidzeleny.net/anadat-r/doku.php/en:numecolr:evplot?do=export_code&codeblock=0")
     # Broken stick model (MacArthur 1957)
     n <- length(ev)
-    bsm <- data.frame(j=seq(1:n), p=0)
-    bsm$p[1] <- 1/n
-    for (i in 2:n) bsm$p[i] <- bsm$p[i-1] + (1/(n + 1 - i))
-    bsm$p <- 100*bsm$p/n
+    bsm <- data.frame(j = seq(1:n), p = 0)
+    bsm$p[1] <- 1 / n
+    for (i in 2:n)
+        bsm$p[i] <- bsm$p[i - 1] + (1 / (n + 1 - i))
+    bsm$p <- 100 * bsm$p / n
     # Plot eigenvalues and % of variation for each axis
-    op <- par(mfrow=c(2,1))
-    barplot(ev, main="Eigenvalues", col="bisque", las=2)
-    abline(h=mean(ev), col="red")
-    legend("topright", "Average eigenvalue", lwd=1, col=2, bty="n")
-    barplot(t(cbind(100*ev/sum(ev), bsm$p[n:1])), beside=TRUE,
-            main="% variation", col=c("bisque",2), las=2)
-    legend("topright", c("% eigenvalue", "Broken stick model"),
-           pch=15, col=c("bisque",2), bty="n")
+    op <- par(mfrow = c(2, 1))
+    barplot(ev,
+            main = "Eigenvalues",
+            col = "bisque",
+            las = 2)
+    abline(h = mean(ev), col = "red")
+    legend(
+        "topright",
+        "Average eigenvalue",
+        lwd = 1,
+        col = 2,
+        bty = "n"
+    )
+    barplot(
+        t(cbind(100 * ev / sum(ev), bsm$p[n:1])),
+        beside = TRUE,
+        main = "% variation",
+        col = c("bisque", 2),
+        las = 2
+    )
+    legend(
+        "topright",
+        c("% eigenvalue", "Broken stick model"),
+        pch = 15,
+        col = c("bisque", 2),
+        bty = "n"
+    )
     par(op)
 }
 
-GetFraction <- function(trees, burnin=20, sample=100) {
+SelectPresvals <- function(vars, pca.wrapper) {
+    # Extract predictors values only for selected variables from pca.wrapper
+    # Args:
+    #   vars: names of variables
+    #   pca.wrapper
+    v <- vector()
+    for (i in 1:length(vars))
+        v[i] <- grep(vars[i], colnames(pca.wrapper$presvals))
+    .presvals <- pca.wrapper$presvals[, v]
+    class(.presvals) <- 'numeric'
+    return(.presvals)
+}
+
+GetFraction <- function(trees,
+                        burnin = 20,
+                        sample = 100) {
     # Perform burn-in and get random sapmle inside set of trees
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   burnin: the percentage of starting trees to discard
     #   sample: a number of trees to sample randomly after burn-in
-    if(!inherits(trees,"multiPhylo"))
+    if (!inherits(trees, "multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
     if (burnin > 0) {
-        burnin <- burnin/100
-        newtrees <- trees[(burnin*length(trees)):length(trees)]
+        burnin <- burnin / 100
+        newtrees <- trees[(burnin * length(trees)):length(trees)]
     } else {
         newtrees <- trees
     }
-    if (sample != 0) newtrees <- sample(newtrees, size=sample)
+    if (sample != 0)
+        newtrees <- sample(newtrees, size = sample)
     return(newtrees)
 }
 
-DropTip <- function(phylo, tipsToDrop=c(1,2)) {
+DropTip <- function(phylo, tipsToDrop = c(1, 2)) {
     # Drop tip from tree or set of trees
     # Wrapper function for ape drop.tip
     # Args:
     #   phylo: a "phylo" or  "multiPhylo" object with phylogenetic tree or trees
     #   tipsToDrop: a vector of tree tips to drop from the tree
-    if(!inherits(phylo, "phylo") && !inherits(phylo, "multiPhylo"))
+    if (!inherits(phylo, "phylo") && !inherits(phylo, "multiPhylo"))
         stop("phylo should be an object of class \"phylo\" or \"multiPhylo\".")
     if (class(phylo) == 'phylo')
-        return( drop.tip(phylo, tipsToDrop) )
-    if (class(phylo) == 'multiPhylo'){
-        newtrees <- lapply(phylo, drop.tip, tip=tipsToDrop)
+        return(drop.tip(phylo, tipsToDrop))
+    if (class(phylo) == 'multiPhylo') {
+        newtrees <- lapply(phylo, drop.tip, tip = tipsToDrop)
         class(newtrees) <- "multiPhylo"
         return(newtrees)
     }
 }
 
-PhyloRescale <- function (trees, times=1000) {
+PhyloRescale <- function (trees, times = 1000) {
     # Function to rescale brach lengths on phylogenetic trees
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   times: a number, in which times trees branch lenghts should be scaled
     #   (e.g. 1000 for kya to mya scaling)
-    if(!inherits(trees,"multiPhylo")) stop("trees should be an object of class \"multiPhylo\".")
+    if (!inherits(trees, "multiPhylo"))
+        stop("trees should be an object of class \"multiPhylo\".")
     newtrees <- list()
-    for ( x in 1:length(trees) ) {
-        trees[[x]]$edge.length <- trees[[x]]$edge.length*times
+    for (x in 1:length(trees)) {
+        trees[[x]]$edge.length <- trees[[x]]$edge.length * times
         newtrees[[x]] <- trees[[x]]
     }
     class(newtrees) <- "multiPhylo"
@@ -96,24 +137,33 @@ MultiplePhylosig <- function (trees, testdata) {
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   testdata: a vector with continuous trait with names matching trees tips
-    phylotest <- as.data.frame(t(sapply(trees, phylosig, x=testdata, test=T, method="lambda")))
-    phylotest <- as.data.frame(cbind(unlist(phylotest$lambda), unlist(phylotest$P)))
+    phylotest <-
+        as.data.frame(t(
+            sapply(
+                trees,
+                phytools::phylosig,
+                x = testdata,
+                test = T,
+                method = "lambda"
+            )
+        ))
+    phylotest <-
+        as.data.frame(cbind(unlist(phylotest$lambda), unlist(phylotest$P)))
     colnames(phylotest) <- c('lambda', 'P')
     message("mean Lambda = ",
             round(mean(phylotest$lambda), 2),
-            " +/- ", round(sd(phylotest$lambda), 2)
-            )
+            " +/- ", round(sd(phylotest$lambda), 2))
     return(phylotest)
 }
 
-GetNodeAncFast <- function(trees, node='root', factors) {
+GetNodeAncFast <- function(trees, node = 'root', factors) {
     # Estimation of factor values for a given node(s) in a set of trees
     # use phangorn, phytools
     # Args:
     #   trees: a "multiPhylo" object w. multiple trees
     #   node: internal node(s) for values estimation
     #   factors: a set of continuous factors in data.frame or matrix
-    if(!inherits(trees,"multiPhylo"))
+    if (!inherits(trees, "multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
     cat('Estimating ancestor characters with BM model.')
     # remember if there are several nodes:
@@ -132,8 +182,9 @@ GetNodeAncFast <- function(trees, node='root', factors) {
         }
         # obtain ancestor values for each factor dimension
         for (j in 1:ncol(factors)) {
-            factor <- structure(factors[,j], names=rownames(factors))
-            factor <- factor[names(factor) %in% trees[[i]]$tip.label]
+            factor <- structure(factors[, j], names = rownames(factors))
+            factor <-
+                factor[names(factor) %in% trees[[i]]$tip.label]
             temp.fastAnc <- fastAnc(trees[[i]], factor)
             if (nodes) {
                 # collect characters for each selected node in a list
@@ -147,135 +198,168 @@ GetNodeAncFast <- function(trees, node='root', factors) {
                 }
             } else {
                 # if selected the only node - combine all estimations in vector
-                temp.fastAnc <- temp.fastAnc[names(temp.fastAnc) == node]
+                temp.fastAnc <-
+                    temp.fastAnc[names(temp.fastAnc) == node]
                 temp.anc[j]  <- temp.fastAnc
             }
         }
         if (i > 1) {
             if (nodes) {
                 for (k in 1:length(node)) {
-                    ancNiche[[k]] <- rbind(ancNiche[[k]], temp.anc[[k]])
+                    states[[k]] <- rbind(states[[k]], temp.anc[[k]])
                 }
             } else {
-                ancNiche <- rbind(ancNiche, temp.anc)
+                states <- rbind(states, temp.anc)
             }
         } else {
             if (nodes) {
-                ancNiche <- list();
+                states <- list()
+
                 for (k in 1:length(node)) {
-                    ancNiche[[k]] <- temp.anc[[k]]
-                    names(ancNiche)[k] <- paste0('node', as.character(node[k]))
+                    states[[k]] <- temp.anc[[k]]
+                    names(states)[k] <-
+                        paste0('node', as.character(node[k]))
                 }
             } else {
-                ancNiche <- temp.anc
+                states <- temp.anc
             }
 
         }
     }
     if (nodes) {
-        for (k in 1:length(node)){
-            rownames(ancNiche[[k]]) <- c(1:length(trees))
+        for (k in 1:length(node)) {
+            rownames(states[[k]]) <- c(1:length(trees))
+            colnames(states[[k]]) <- colnames(factors)
         }
     } else {
-        rownames(ancNiche) <- c(1:length(trees))
-        colnames(ancNiche) <- c(1:length(factors))
+        rownames(states) <- c(1:length(trees))
+        colnames(states) <- colnames(factors)
     }
-    cat('Done\n')
-    return(ancNiche)
+    message('Done')
+    return(states)
 }
 
-GetNodeAncSlow <- function (trees, factor, node='root', ncores=NULL) {
-    # Estimation of factor values for a given node(s) in a set of trees
-    # with fitting different models of char evolution (BM, EB and OU)
-    # use phangorn, phytools, geiger, parallel
-    # Args:
-    #   trees: a "multiPhylo" object w. multiple trees
-    #   node: internal node(s) for values estimation
-    #   factor: a set of contionuous factors in data.frame
-    if(!inherits(trees, "multiPhylo"))
-        stop("trees should be an object of class \"multiPhylo\".")
-    message('Estimating ancestor characters with best-fit model')
-    cont.model <- character()
-    if (length(node) > 1) {
-        cont.states <- list()
-    } else {
-        cont.states <- vector()
-    }
-    # rescale data if need
-    if (min(factor) < 1 || max(factor) > 1) {
-      abs.max <- max(abs(factor))
-      factor <- factor/abs.max
-    } else {
-      abs.max <- 1
-    }
-    # work with each tree in set
-    cat('Fitting models and obtaining ancestral values.')
-    for (i in 1:length(trees)) {
-        this.factor <- factor[names(factor) %in% trees[[i]]$tip.label]
-        # fit models
-        bm <- fitContinuous(trees[[i]], this.factor, model="BM", ncores=ncores)
-        ou <- fitContinuous(trees[[i]], this.factor, model="OU", ncores=ncores)
-        eb <- fitContinuous(trees[[i]], this.factor, model="EB", ncores=ncores)
-        # sort them by AICc
-        aicc <- structure(c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc), names=c("BM","OU","EB"))
-        selected <- names( sort(aicc)[1] )
-        # if diff too small - change selected
-        if (abs((sort(aicc)[1] - sort(aicc)[2])) < 4 && names(sort(aicc)[2]) == 'BM' || 
-            abs((sort(aicc)[1] - sort(aicc)[2])) < 4 && abs((sort(aicc)[2] - sort(aicc)[3])) < 4)
-          selected <- 'BM'
-        cont.model[i] <- selected
-        # message("Tree no.", i, " preferred model: ", selected);
-        # message( 'BM:', round(aicc[1], 2), ' OU:', round(aicc[2], 2), ' EB:', round(aicc[3], 2) );
-        # now fit tree to model
-        cat('.')
-        if (selected == 'OU') {
-            tree <- rescale(trees[[i]], model='OU', alpha=ou$opt$alpha)
-        } else if (selected == 'EB') {
-            tree <- rescale(trees[[i]], model='EB', a=eb$opt$a, sigsq=bm$opt$sigsq)
-        } else {
-            tree <- rescale(trees[[i]], model='BM', sigsq=bm$opt$sigsq)
-        }
-        if (length(node) == 1 && node == 'root')
-            node <- phangorn::getRoot(tree)
-        temp.fastAnc <- fastAnc(tree, this.factor)*abs.max
+GetNodeAncSlow <-
+    function (trees,
+              factor,
+              node = 'root',
+              ncores = NULL) {
+        # Estimation of factor values for a given node(s) in a set of trees
+        # with fitting different models of char evolution (BM, EB and OU)
+        # use phangorn, phytools, geiger, parallel
+        # Args:
+        #   trees: a "multiPhylo" object w. multiple trees
+        #   node: internal node(s) for values estimation
+        #   factor: a set of contionuous factors in data.frame
+        if (!inherits(trees, "multiPhylo"))
+            stop("trees should be an object of class \"multiPhylo\".")
+        message('Estimating ancestor characters with best-fit model')
+        cont.model <- character()
         if (length(node) > 1) {
-            # collect characters for each selected node in a list
-            for (k in 1:length(node)) {
-                temp.val <- temp.fastAnc[names(temp.fastAnc) == node[k]]
-                if (i > 1) {
-                    cont.states[[k]][i] <- temp.val
-                } else {
-                    cont.states[paste0('node', as.character(node[k]))] <- temp.val
-                }
-            }
+            cont.states <- list()
         } else {
-            # if selected the only node - combine all estimations in vector
-            temp.fastAnc   <- temp.fastAnc[names(temp.fastAnc) == node]
-            cont.states[[i]] <- temp.fastAnc
+            cont.states <- vector()
         }
+        # rescale data if need
+        if (min(factor) < 1 || max(factor) > 1) {
+            abs.max <- max(abs(factor))
+            factor <- factor / abs.max
+        } else {
+            abs.max <- 1
+        }
+        # work with each tree in set
+        message('Fitting models and obtaining ancestral values.')
+        for (i in 1:length(trees)) {
+            this.factor <- factor[names(factor) %in% trees[[i]]$tip.label]
+            # fit models
+            bm <- fitContinuous(trees[[i]],
+                                this.factor,
+                                model = "BM",
+                                ncores = ncores)
+            ou <- fitContinuous(trees[[i]],
+                              this.factor,
+                              model = "OU",
+                              ncores = ncores)
+            eb <- fitContinuous(trees[[i]],
+                              this.factor,
+                              model = "EB",
+                              ncores = ncores)
+            # sort them by AICc
+            aicc <- structure(c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc),
+                          names = c("BM", "OU", "EB"))
+            selected <- names(sort(aicc)[1])
+            # if diff too small - change selected
+            if (abs((sort(aicc)[1] - sort(aicc)[2])) < 4 &&
+                names(sort(aicc)[2]) == 'BM' ||
+                abs((sort(aicc)[1] - sort(aicc)[2])) < 4 &&
+                abs((sort(aicc)[2] - sort(aicc)[3])) < 4)
+                selected <- 'BM'
+            cont.model[i] <- selected
+            # message("Tree no.", i, " preferred model: ", selected);
+            # message( 'BM:', round(aicc[1], 2), ' OU:', round(aicc[2], 2), ' EB:', round(aicc[3], 2) );
+            # now fit tree to model
+            cat('.')
+            if (selected == 'OU') {
+                tree <- rescale(trees[[i]],
+                                model = 'OU',
+                                alpha = ou$opt$alpha)
+            } else if (selected == 'EB') {
+                tree <-
+                    rescale(
+                        trees[[i]],
+                        model = 'EB',
+                        a = eb$opt$a,
+                        sigsq = bm$opt$sigsq
+                    )
+            } else {
+                tree <- rescale(trees[[i]],
+                                model = 'BM',
+                                sigsq = bm$opt$sigsq)
+            }
+            if (length(node) == 1 && node == 'root')
+                node <- phangorn::getRoot(tree)
+            temp.fastAnc <- fastAnc(tree, this.factor) * abs.max
+            if (length(node) > 1) {
+                # collect characters for each selected node in a list
+                for (k in 1:length(node)) {
+                    temp.val <- temp.fastAnc[names(temp.fastAnc) == node[k]]
+                    if (i > 1) {
+                        cont.states[[k]][i] <- temp.val
+                    } else {
+                        cont.states[paste0('node', as.character(node[k]))] <- temp.val
+                    }
+                }
+            } else {
+                # if selected the only node - combine all estimations in vector
+                temp.fastAnc   <-
+                    temp.fastAnc[names(temp.fastAnc) == node]
+                cont.states[[i]] <- temp.fastAnc
+            }
+        }
+        message('Done')
+        result <- list()
+        result$selected <- cont.model
+        result$states <- cont.states
+        return(result)
     }
-    cat('Done\n')
-    result <- list()
-    result$selected <- cont.model
-    result$states <- cont.states
-    return(result)
-}
 
-GetDistrByPred <- function(stack, predictors,
-                           boost=.05, checkIfStop=F) {
+GetDistrByPred <- function(stack,
+                           predictors,
+                           boost = .05,
+                           checkIfStop = F) {
     # Get approximate distribution for each layer in stack by predictors values
     # use raster
     # Args:
     #   stack: a RasterStack object
     #   predictors: a data.frame with predictors values
     #   boost: percentage of each predictor value extension (+/-, %)
-    if(!inherits(stack, "RasterStack"))
+    if (!inherits(stack, "RasterStack"))
         stop("stack should be an object of class \"RasterStack\".")
     layer.list <- list()
     cat('Approximating distibution in each layer.')
     for (i in 1:length(stack[1])) {
         cat('.')
-        layerVal.list <- unique(round(predictors[,i]))
+        layerVal.list <- unique(round(predictors[, i]))
         for (j in 1:length(layerVal.list)) {
             layerVal <- layerVal.list[j]
             if (boost > 0) {
@@ -288,18 +372,19 @@ GetDistrByPred <- function(stack, predictors,
                 }
                 layer.temp.min <- stack[[i]] > layerVal.min
                 layer.temp.max <- stack[[i]] < layerVal.max
-                layer.temp <- layer.temp.min*layer.temp.max
+                layer.temp <- layer.temp.min * layer.temp.max
                 layer.temp[layer.temp > 0] <- 1
             } else {
                 layer.temp <- stack[[i]] == layerVal
             }
             if (j > 1) {
-                layer.merged <- layer.merged+layer.temp
+                layer.merged <- layer.merged + layer.temp
             } else {
                 layer.merged <- layer.temp
             }
         }
-        layer.merged <- layer.merged/max(values(layer.merged), na.rm=T)
+        layer.merged <-
+            layer.merged / max(values(layer.merged), na.rm = T)
         layer.list[i] <- layer.merged
         if (checkIfStop) {
             layer.result <- OverlapLayers(layer.list)
@@ -307,7 +392,7 @@ GetDistrByPred <- function(stack, predictors,
         } else {
             exit <- F
         }
-        if ( exit ) {
+        if (exit) {
             cat('weak signal\n')
             break
         }
@@ -315,29 +400,30 @@ GetDistrByPred <- function(stack, predictors,
 
     if (!exit && checkIfStop)
         cat('done\n\n')
-        return(layer.result)
+    return(layer.result)
     if (!exit)
         cat('done\n\n')
-        return(layer.list)
+    return(layer.list)
 }
 
-OverlapLayers <- function(list, stopIfNA=F) {
+OverlapLayers <- function(list, stopIfNA = F) {
     # Overlaps list of Raster layers with same size to ingle layer
     # use raster
     # Args:
     #   list: list of Raster objects produced by GetDistrByPred function
     #   stopIfNA: stop if all values in resulting layer is NA
     for (i in 1:length(list)) {
-        if ( i > 1) {
-            layer.result <- layer.result*list[[i]]
+        if (i > 1) {
+            layer.result <- layer.result * list[[i]]
         } else {
             layer.result <- list[[i]]
         }
-        if ( all(is.na(values(layer.result))) && stopIfNA ) {
-            message('Breaking merge at ', i,' layer')
+        if (all(is.na(values(layer.result))) && stopIfNA) {
+            message('Breaking merge at ', i, ' layer')
             break
         }
     }
-    layer.result <- layer.result/max(values(layer.result), na.rm=T)
+    layer.result <-
+        layer.result / max(values(layer.result), na.rm = T)
     return(layer.result)
 }

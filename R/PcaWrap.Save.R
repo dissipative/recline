@@ -49,7 +49,6 @@ PcaWrap.Save <- function(pca.wrapper, output.path) {
     ggsave(filename=file.path(output.path, 'pca.plots/contrib.all.svg'),
             plot=.contrib.all, width=10, height=7)
 
-
     # Save PCA data
     .result.pca <- cbind(.result.presvals[,1:3], .pca2$x[,1:.pca.dim])
     write.csv(.result.presvals,

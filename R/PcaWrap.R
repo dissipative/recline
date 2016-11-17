@@ -11,7 +11,7 @@ as.pca.wrapper <- function(result.presvals, pca, pca2, pca.expl, pca.loadings){
 }
 
 PcaWrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
-#   in: paths to occurence data, bioclim variables, extension of gis layers
+#   in: paths to occurence data and bioclim variables, extension of gis layers
 #   class name: RCN PCA wrapper
     # Data processing
     .list.locations <- read.csv(
@@ -22,7 +22,7 @@ PcaWrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
         path=bioclim.data,
         pattern=paste0('*.', bioclim.ext), full.names=T
     )
-    message('Extracting predictors values.')
+    message('Extracting predictors values...')
     .list.presvals <- raster::extract( #predictors values
         raster::stack(.list.geoFiles),
         data.frame(.list.locations$Long, .list.locations$Lat)
@@ -44,7 +44,7 @@ PcaWrap <- function(occurence.points, bioclim.data, bioclim.ext='tif'){
     if (nrow(.result.presvals) == 0) stop('No predictor values for given coordinates!')
 
     # PCA
-    message('Performing PCA.')
+    message('Performing PCA...')
     .list.types <- unique(as.data.frame(.result.presvals)$Type)
     .pca.data <- .list.presvals[complete.cases(.list.presvals),]
     .pca <- ade4::dudi.pca( .pca.data, nf=3, scannf=F, scale=T  )
