@@ -1,0 +1,7 @@
+install.packages(c('rgdal', 'geiger', 'devtools', 'ade4', 'digest', 'raster'))
+source("https://bioconductor.org/biocLite.R")
+biocLite(c('Biostrings', 'phytools'))
+# devtools::install_github('slowkow/ggrepel')
+devtools::install_github('tidyverse/ggplot2')
+devtools::install_github('kassambara/factoextra')
+devtools::install_github('dissipative/recline')
