@@ -5,4 +5,7 @@ output/
 data/
 !/.gitignore
 .Rproj.user
+.Rhistory
+.RData
+.Ruserdata
 test.R

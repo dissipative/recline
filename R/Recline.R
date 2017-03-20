@@ -63,18 +63,90 @@ EvPlot <- function(ev) {
     par(op)
 }
 
-SelectPresvals <- function(vars, pca.wrapper) {
+SelectPredvals <- function(vars, predvals) {
     # Extract predictors values only for selected variables from pca.wrapper
     # Args:
     #   vars: names of variables
-    #   pca.wrapper
+    #   predvals: predictors values
     v <- vector()
     for (i in 1:length(vars))
-        v[i] <- grep(vars[i], colnames(pca.wrapper$presvals))
-    .presvals <- pca.wrapper$presvals[, v]
-    class(.presvals) <- 'numeric'
-    return(.presvals)
+        v[i] <- grep(vars[i], colnames(predvals))
+    result <- predvals[, v]
+    rownames(result) <- rownames(predvals)
+    class(result) <- 'numeric'
+    if (!is.null(as.data.frame(predvals)$ID))
+        rownames(result) <- as.data.frame(predvals)$ID
+    return(result)
 }
+
+GetPredictorsValues <- function(occurence.points, bioclim.data, bioclim.ext='tif' ) {
+
+    locations <- read.csv(
+        occurence.points,
+        stringsAsFactors = F,
+        header = T,
+        sep = ",",
+        dec = "."
+    )
+
+    spatial.layers <- list.files(
+        path = bioclim.data,
+        pattern = paste0('*.', bioclim.ext),
+        full.names = T
+    )
+
+    result <- list()
+
+    result$raw <- raster::extract(raster::stack(spatial.layers),
+                                         data.frame(locations$Long, locations$Lat))
+    result$values <- cbind(
+        cbind(locations$ID,
+              locations$Type),
+        cbind(locations$Clade,
+              result$raw)
+    )
+    colnames(result$values)[1:3] <- c('ID', 'Type', 'Clade')
+
+    result$values <- result$values[complete.cases(result$values),]
+    if (nrow(result$values) == 0)
+        stop('No predictor values for given coordinates!')
+
+    return(result)
+}
+
+SuggestVariables <- function(predictors.values) {
+
+    message('Performing PCA...')
+
+    pca.data <- predictors.values[complete.cases(predictors.values),]
+    pca <- prcomp(predictors.values, scale. =T)
+
+    # get eigenvalues
+    ev <- pca$sdev^2
+
+    # broken stick model:
+    ev.n <- length(ev)
+    bsm<- data.frame(j = seq(1:ev.n), p = 0)
+    bsm$p[1] <- 1 / ev.n
+    for (i in 2:ev.n )
+        bsm$p[i] <- bsm$p[i - 1] + (1 / (ev.n  + 1 - i))
+    bsm$p <- 100 * bsm$p / ev.n
+    bsm <- cbind(100 * ev / sum(ev), bsm$p[ev.n :1])
+
+    # choose the main PCs
+    pc_to_use <- which(bsm[,1] > bsm[,2])
+    main_loadings <- abs(pca$rotation[,pc_to_use])
+
+    suggested_variables <- list()
+    for (i in 1:ncol(main_loadings))
+        suggested_variables[i] <- names(which(main_loadings[,i] == max(main_loadings[,i])))
+
+    suggested_variables <- unlist(suggested_variables)
+    message('Suggested variables are: ', paste(suggested_variables, collapse = ', '))
+
+    return(suggested_variables)
+}
+
 
 GetFraction <- function(trees,
                         burnin = 20,
@@ -137,18 +209,17 @@ MultiplePhylosig <- function (trees, testdata) {
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   testdata: a vector with continuous trait with names matching trees tips
-    phylotest <-
-        as.data.frame(t(
-            sapply(
-                trees,
-                phytools::phylosig,
-                x = testdata,
-                test = T,
-                method = "lambda"
-            )
-        ))
-    phylotest <-
-        as.data.frame(cbind(unlist(phylotest$lambda), unlist(phylotest$P)))
+    phylotest <- as.data.frame(t(
+        sapply(
+            trees,
+            phytools::phylosig,
+            x = testdata,
+            test = T,
+            method = "lambda"
+        )
+    ))
+    phylotest <- as.data.frame(cbind(unlist(phylotest$lambda),
+                                     unlist(phylotest$P)))
     colnames(phylotest) <- c('lambda', 'P')
     message("mean Lambda = ",
             round(mean(phylotest$lambda), 2),
