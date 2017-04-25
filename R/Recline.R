@@ -63,7 +63,7 @@ EvPlot <- function(ev) {
     par(op)
 }
 
-SelectPredvals <- function(vars, predvals) {
+SelectPredVals <- function(vars, predvals) {
     # Extract predictors values only for selected variables from pca.wrapper
     # Args:
     #   vars: names of variables
@@ -119,7 +119,8 @@ SuggestVariables <- function(predictors.values) {
     message('Performing PCA...')
 
     pca.data <- predictors.values[complete.cases(predictors.values),]
-    pca <- prcomp(predictors.values, scale. =T)
+    pca.data <- apply(t(pca.data), 1, as.numeric)
+    pca <- prcomp(pca.data, scale. =T)
 
     # get eigenvalues
     ev <- pca$sdev^2
