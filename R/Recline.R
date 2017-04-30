@@ -1,5 +1,3 @@
-
-
 # internal functions (non-imported)
 
 CheckDir <- function(path) {
@@ -114,13 +112,35 @@ GetPredictorsValues <- function(occurence.points, bioclim.data, bioclim.ext='tif
     return(result)
 }
 
+GetLowestContribVar <- function(pca, pc_to_use = c(1,2,3)) {
+    if (!inherits(pca, 'prcomp'))
+        stop('pca must be the object of the class "prcomp"')
+
+    sdev <- pca$sdev
+    loadings <- abs(pca$rotation[,1:length(pc_to_use)])
+
+    pca.abs <- matrix(NA, ncol = length(pc_to_use), nrow = nrow(loadings))
+    contrib_sum <- vector(length = nrow(pca.abs))
+
+    for (i in 1:length(pc_to_use))
+        pca.abs[,i] <- loadings[,i] * sdev[i]
+
+    for (j in 1:nrow(pca.abs))
+        contrib_sum[j] <- sum(pca.abs[j,]^2)
+
+    names(contrib_sum) <- row.names(loadings)
+    factor_name <- names(sort(contrib_sum)[1])
+
+    return(factor_name)
+}
+
 SuggestVariables <- function(predictors.values) {
 
     message('Performing PCA...')
 
     pca.data <- predictors.values[complete.cases(predictors.values),]
     pca.data <- apply(t(pca.data), 1, as.numeric)
-    pca <- prcomp(pca.data, scale. =T)
+    pca <- prcomp(pca.data, scale. = T)
 
     # get eigenvalues
     ev <- pca$sdev^2
@@ -141,6 +161,9 @@ SuggestVariables <- function(predictors.values) {
     suggested_variables <- list()
     for (i in 1:ncol(main_loadings))
         suggested_variables[i] <- names(which(main_loadings[,i] == max(main_loadings[,i])))
+
+    # additional variable!
+    suggested_variables[ncol(main_loadings) + 1] <- GetLowestContribVar(pca, pc_to_use)
 
     suggested_variables <- unlist(suggested_variables)
     message('Suggested variables are: ', paste(suggested_variables, collapse = ', '))
