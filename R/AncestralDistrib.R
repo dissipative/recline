@@ -1,5 +1,5 @@
 # Ancestors distribution
-AncDistrib <- function(anc.niche,
+AncestralDistrib <- function(anc.niche,
                        predictors,
                        bioclim.past.data,
                        bioclim.ext = 'tif',
@@ -13,10 +13,8 @@ AncDistrib <- function(anc.niche,
     #           extension of gis layers
     #           boost
     # out: ancestral distribution object
-    if (!inherits(anc.niche, 'anc.niche'))
-        stop('anc.niche should be an object of class \"anc.niche\".')
-    if (!inherits(pca.wrapper, 'pca.wrapper'))
-        stop('pca.wrapper should be an object of class \"pca.wrapper\".')
+    if (!inherits(anc.niche, 'AncestalNiche'))
+        stop('anc.niche should be an object of class \"AncestalNiche\".')
 
     result <- list()
     result$nodes <- anc.niche$nodes
@@ -89,7 +87,7 @@ internal_boosting <- function(geo_stack,
             checkIfStop = T
         )
         if (is.null(ancestal_distrib) ||
-            all(is.na(values(ancestal_distrib)))) {
+            all(is.na(raster::values(ancestal_distrib)))) {
             boost <- boost + boost.step
             message('Boosting predictors values range by ', boost)
         } else {

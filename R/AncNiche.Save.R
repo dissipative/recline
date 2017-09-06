@@ -1,8 +1,8 @@
 AncNiche.Save <- function(anc.niche, pca.wrapper, output.path){
 # in: phylogeny based climatic niche, output path
 
-    if(!inherits(anc.niche, 'anc.niche'))
-        stop("anc.niche should be an object of class \"anc.niche\".")
+    if(!inherits(anc.niche, 'AncestalNiche'))
+        stop("anc.niche should be an object of class \"AncestalNiche\".")
     if(!inherits(pca.wrapper,'pca.wrapper'))
         stop("pca.wrapper should be an object of class \"pca.wrapper\".")
 

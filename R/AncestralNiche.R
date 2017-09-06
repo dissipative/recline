@@ -108,10 +108,10 @@ AncestralNiche <- function(trees,
         }
         if (length(nodes) > 1) {
             for (k in 1:length(nodes)) {
-                colnames(states[[k]]) <- colnames(factors)
+                colnames(states[[k]]) <- colnames(predictors.values)
             }
         } else {
-            colnames(states) <- colnames(factors)
+            colnames(states) <- colnames(predictors.values)
         }
         result$models <- models
     } else {
