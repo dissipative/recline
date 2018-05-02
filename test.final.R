@@ -1,4 +1,5 @@
 # test.final
+# remove after package be ready
 
 source('R/Recline.R')
 source('R/AncestralNiche.R')
@@ -16,6 +17,7 @@ require(factoextra)
 require(raster)
 require(phangorn)
 
+# get cropped geo-layers
 bioclim.present <- '/Users/artem/Cloud/current/gis-data/MAP_LAYERS/BIOCLIM/Present/2.5arcmin/mnem'
 bioclim.past <- '/Users/artem/Cloud/current/gis-data/MAP_LAYERS/BIOCLIM/Past/LIG-120k-2.5-mnem/'
 
@@ -41,10 +43,10 @@ plotTree(simple.forest, node.numbers=T, fsize=.5)
 outgroup <- c('ariadne01', 'ariadne02')
 nodes <- c(38, 58, 59)
 
-pv <- predictors$values[1:3112,4:ncol(predictors$values)] # only numeric values
-
-predictors.use <- SuggestVariables(pv)
+# get predictors from occurence points + geo-layer
 predictors <- GetPredictorsValues(occurence.points, bioclim.present)
+predictors.num <- predictors$values[1:3112,4:ncol(predictors$values)] # only numeric values
+predictors.use <- SuggestVariables(predictors.num)
 predictors.selected <- SelectPredVals(predictors.use, predictors$values)
 
 # restore occurences and climatic conditions by variables

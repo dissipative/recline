@@ -447,7 +447,7 @@ GetDistrByPred <- function(stack,
     # Args:
     #   stack: a RasterStack object
     #   predictors: a data.frame with predictors values
-    #   boost: percentage of each predictor value extension (+/-, %)
+    #   boost: percentage of each predictor value increment (+/-, %)
     if (!inherits(stack, "RasterStack"))
         stop("stack should be an object of class \"RasterStack\".")
     layer.list <- list()
@@ -502,7 +502,7 @@ GetDistrByPred <- function(stack,
 }
 
 OverlapLayers <- function(list, stopIfNA = F) {
-    # Overlaps list of Raster layers with same size to ingle layer
+    # Overlaps list of Raster layers with same size to single layer
     # use raster
     # Args:
     #   list: list of Raster objects produced by GetDistrByPred function
