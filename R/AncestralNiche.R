@@ -1,3 +1,27 @@
+#' Predict ancestral niche
+#'
+#' @description
+#'
+#' @param trees object of class "multiPhylo".
+#' @param best.tree object of class "phylo".
+#' @param predictors.values a named numeric vector of predictor values obtained
+#' by \code{\link{SelectPredVals}}.
+#' @param outgroup vector of phylogenetic tips for outgroup. Not necessary.
+#' @param nodes internal nodes to estimate states (combined characters
+#' or numbers).
+#' @param trees.sample trees sample fraction (how many trees to analyze).
+#' @param trees.burnin trees burn-in percentage (how many trees to drop before
+#' sampling a fraction).
+#' @param do.lambda a flag whether to estimate phylogenetic sygnal of
+#' predictors on trees.
+#' @param do.models a flag whether to estimate best fitting evolutionary model
+#' for obtaining ancestral values for predictors.
+#'
+#' @return object of class "AncestalNiche"
+#' @export
+#' @importFrom ape ladderize
+#'
+#' @examples
 AncestralNiche <- function(trees,
                            best.tree,
                            predictors.values,

@@ -1,4 +1,9 @@
 # internal functions (non-imported)
+requireNamespace('ape')
+requireNamespace('raster')
+requireNamespace('phytools')
+requireNamespace('phangorn')
+requireNamespace('geiger')
 
 CheckDir <- function(path) {
     # Check if directory exist
@@ -17,12 +22,15 @@ EmptyDF <- function(colnames = c('a', 'b', 'c')) {
     return(newDF)
 }
 
+#' @importFrom graphics par legend barplot abline
 EvPlot <- function(ev) {
     # Check PC significance levels
     # use graphics
     # Args:
     #   ev: a vector of eigenvalues of PCA object
-    # source ("http://www.davidzeleny.net/anadat-r/doku.php/en:numecolr:evplot?do=export_code&codeblock=0")
+    # source ("http://www.davidzeleny.net/anadat-r/doku.php/en:numecolr:evplot")
+    # Borcard, D., Gillet, F. & Legendre, P. 2011. Numerical Ecology with R.
+    # Springer. Supplementary material
     # Broken stick model (MacArthur 1957)
     n <- length(ev)
     bsm <- data.frame(j = seq(1:n), p = 0)
@@ -61,6 +69,17 @@ EvPlot <- function(ev) {
     par(op)
 }
 
+#' @export
+#' @title Select predictor values
+#'
+#' @description Extract predictors values only for selected variables
+#' after selection done by \code{\link{SuggestVariables}}.
+#'
+#' @param vars a character vector with names of selected variables.
+#' @param predvals predictor values obtained with
+#' \code{\link{GetPredictorsValues}}.
+#'
+#' @return A named numeric vector.
 SelectPredVals <- function(vars, predvals) {
     # Extract predictors values only for selected variables from pca.wrapper
     # Args:
@@ -74,59 +93,83 @@ SelectPredVals <- function(vars, predvals) {
     class(result) <- 'numeric'
     if (!is.null(as.data.frame(predvals)$ID))
         rownames(result) <- as.data.frame(predvals)$ID
-    return(result)
+    return (result)
 }
 
-GetPredictorsValues <- function(occurence.points, bioclim.data, bioclim.ext='tif' ) {
+#' @importFrom raster extract stack
+#' @importFrom utils read.csv
+#' @export
+#' @title Get predictor values for each occurence point.
+#'
+#' @description Predictor values is the values of each geospatial layer
+#' (BIOCLIM) for each occurence point of the species of interest.
+#'
+#' @param occurence.points a character string with the path to CSV file
+#' containing occurence points. Necessary columns in the CSV file are:
+#' Type, ID, Long, Lat, Clade.
+#' @param bioclim.data a character string with the path to geospatial layers
+#' (BIOCLIM or similar variables). The format of layers must be compatible with
+#' \code{stack} and \code{extract} methods of \code{raster} package.
+#' @param bioclim.ext a character string with the file extention of geospatial
+#' layers given in bioclim.data argument. By default is "tif" (geotif files).
+#'
+#' @return list with two collections,
+#' \code{$raw} (extracted BIOCLIM data for each occurence point) and
+#' \code{$values} (including columns ID, Type, and Clade of occurence.points +
+#' data from \code{$raw} collection).
+GetPredictorsValues <-
+    function(occurence.points,
+             bioclim.data,
+             bioclim.ext = 'tif') {
+        locations <- read.csv(
+            file = occurence.points,
+            stringsAsFactors = F,
+            header = T,
+            sep = ",",
+            dec = "."
+        )
 
-    locations <- read.csv(
-        occurence.points,
-        stringsAsFactors = F,
-        header = T,
-        sep = ",",
-        dec = "."
-    )
+        spatial.layers <- list.files(
+            path = bioclim.data,
+            pattern = paste0('*.', bioclim.ext),
+            full.names = T
+        )
 
-    spatial.layers <- list.files(
-        path = bioclim.data,
-        pattern = paste0('*.', bioclim.ext),
-        full.names = T
-    )
+        result <- list()
 
-    result <- list()
+        result$raw <- raster::extract(raster::stack(spatial.layers),
+                                      data.frame(locations$Long, locations$Lat))
+        result$values <- cbind(cbind(locations$ID,
+                                     locations$Type),
+                               cbind(locations$Clade,
+                                     result$raw))
+        colnames(result$values)[1:3] <- c('ID', 'Type', 'Clade')
 
-    result$raw <- raster::extract(raster::stack(spatial.layers),
-                                         data.frame(locations$Long, locations$Lat))
-    result$values <- cbind(
-        cbind(locations$ID,
-              locations$Type),
-        cbind(locations$Clade,
-              result$raw)
-    )
-    colnames(result$values)[1:3] <- c('ID', 'Type', 'Clade')
+        result$values <- result$values[complete.cases(result$values), ]
+        if (nrow(result$values) == 0)
+            stop('No predictor values for given coordinates!')
 
-    result$values <- result$values[complete.cases(result$values),]
-    if (nrow(result$values) == 0)
-        stop('No predictor values for given coordinates!')
+        return(result)
+    }
 
-    return(result)
-}
-
-GetLowestContribVar <- function(pca, pc_to_use = c(1,2,3)) {
+GetLowestContribVar <- function(pca, pc_to_use = c(1, 2, 3)) {
     if (!inherits(pca, 'prcomp'))
         stop('pca must be the object of the class "prcomp"')
 
     sdev <- pca$sdev
-    loadings <- abs(pca$rotation[,1:length(pc_to_use)])
+    loadings <- abs(pca$rotation[, 1:length(pc_to_use)])
 
-    pca.abs <- matrix(NA, ncol = length(pc_to_use), nrow = nrow(loadings))
+    pca.abs <-
+        matrix(NA,
+               ncol = length(pc_to_use),
+               nrow = nrow(loadings))
     contrib_sum <- vector(length = nrow(pca.abs))
 
     for (i in 1:length(pc_to_use))
-        pca.abs[,i] <- loadings[,i] * sdev[i]
+        pca.abs[, i] <- loadings[, i] * sdev[i]
 
     for (j in 1:nrow(pca.abs))
-        contrib_sum[j] <- sum(pca.abs[j,]^2)
+        contrib_sum[j] <- sum(pca.abs[j, ] ^ 2)
 
     names(contrib_sum) <- row.names(loadings)
     factor_name <- names(sort(contrib_sum)[1])
@@ -134,52 +177,90 @@ GetLowestContribVar <- function(pca, pc_to_use = c(1,2,3)) {
     return(factor_name)
 }
 
+#' Suggest predictors variables
+#'
+#' @description Suggest predictors variables for prediction of ancestral
+#' niche & distibution by PCA and Broken Stick model. Suggested variables
+#' contain the maximum information about studied species.
+#'
+#' @param predictors.values numeric matrix or data.frame of predictor values
+#' for used occurence points.
+#'
+#' @return a character vector with the names of suggested variables.
+#'
+#' @export
+#' @importFrom stats complete.cases prcomp
+#'
+#' @examples
+#' predictors <- GetPredictorsValues(occurence.points, bioclim.present)
+#' predictors.num <- predictors$values[1:3112,4:ncol(predictors$values)]
+#' predictors.use <- SuggestVariables(predictors.num)
+#' predictors.selected <- SelectPredVals(predictors.use, predictors$values)
 SuggestVariables <- function(predictors.values) {
 
     message('Performing PCA...')
 
-    pca.data <- predictors.values[complete.cases(predictors.values),]
+    pca.data <-
+        predictors.values[complete.cases(predictors.values), ]
     pca.data <- apply(t(pca.data), 1, as.numeric)
     pca <- prcomp(pca.data, scale. = T)
 
     # get eigenvalues
-    ev <- pca$sdev^2
+    ev <- pca$sdev ^ 2
 
     # broken stick model:
     ev.n <- length(ev)
-    bsm<- data.frame(j = seq(1:ev.n), p = 0)
+    bsm <- data.frame(j = seq(1:ev.n), p = 0)
     bsm$p[1] <- 1 / ev.n
-    for (i in 2:ev.n )
+    for (i in 2:ev.n)
         bsm$p[i] <- bsm$p[i - 1] + (1 / (ev.n  + 1 - i))
     bsm$p <- 100 * bsm$p / ev.n
-    bsm <- cbind(100 * ev / sum(ev), bsm$p[ev.n :1])
+    bsm <- cbind(100 * ev / sum(ev), bsm$p[ev.n:1])
 
     # choose the main PCs
-    pc_to_use <- which(bsm[,1] > bsm[,2])
-    main_loadings <- abs(pca$rotation[,pc_to_use])
+    pc_to_use <- which(bsm[, 1] > bsm[, 2])
+    main_loadings <- abs(pca$rotation[, pc_to_use])
 
     suggested_variables <- list()
     for (i in 1:ncol(main_loadings))
-        suggested_variables[i] <- names(which(main_loadings[,i] == max(main_loadings[,i])))
+        suggested_variables[i] <-
+        names(which(main_loadings[, i] == max(main_loadings[, i])))
 
     # additional variable!
-    suggested_variables[ncol(main_loadings) + 1] <- GetLowestContribVar(pca, pc_to_use)
+    suggested_variables[ncol(main_loadings) + 1] <-
+        GetLowestContribVar(pca, pc_to_use)
 
     suggested_variables <- unlist(suggested_variables)
-    message('Suggested variables are: ', paste(suggested_variables, collapse = ', '))
+    message('Suggested variables are: ',
+            paste(suggested_variables, collapse = ', '))
 
     return(suggested_variables)
 }
 
-
+#' Get fraction of phylogenetic trees
+#'
+#' @description Perform burn-in and get random sapmle inside set of trees.
+#'
+#' @param trees a "multiPhylo" object with multiple trees.
+#' @param burnin the percentage of starting trees to discard.
+#' @param sample a number of trees to sample randomly after burn-in.
+#'
+#' @return a "multiPhylo" object with new trees selection.
+#' @export
+#'
+#' @examples
+#' # get random 100 trees after discarding first 20%
+#' forest.sample <- GetFraction(forest)
 GetFraction <- function(trees,
                         burnin = 20,
                         sample = 100) {
+
     # Perform burn-in and get random sapmle inside set of trees
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   burnin: the percentage of starting trees to discard
     #   sample: a number of trees to sample randomly after burn-in
+
     if (!inherits(trees, "multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
     if (burnin > 0) {
@@ -193,6 +274,7 @@ GetFraction <- function(trees,
     return(newtrees)
 }
 
+#' @importFrom ape drop.tip
 DropTip <- function(phylo, tipsToDrop = c(1, 2)) {
     # Drop tip from tree or set of trees
     # Wrapper function for ape drop.tip
@@ -227,12 +309,25 @@ PhyloRescale <- function (trees, times = 1000) {
     return(newtrees)
 }
 
+
+#' Multiple phylogenetic signal test
+#'
+#' @param trees a "multiPhylo" object with multiple trees.
+#' @param testdata a vector with continuous trait with names matching
+#' trees tips
+#'
+#' @return data.frame.
+#'
+#' @importFrom phytools phylosig
+#' @importFrom stats sd
 MultiplePhylosig <- function (trees, testdata) {
+
     # Wrapper function for phylogenetic signal test (lambda estimation)
     # use phytools
     # Args:
     #   trees: a "multiPhylo" object with multiple trees
     #   testdata: a vector with continuous trait with names matching trees tips
+
     phylotest <- as.data.frame(t(
         sapply(
             trees,
@@ -251,6 +346,8 @@ MultiplePhylosig <- function (trees, testdata) {
     return(phylotest)
 }
 
+#' @importFrom phytools fastAnc
+#' @importFrom phangorn getRoot
 GetNodeAncFast <- function(trees, node = 'root', factors) {
     # Estimation of factor values for a given node(s) in a set of trees
     # use phangorn, phytools
@@ -260,7 +357,7 @@ GetNodeAncFast <- function(trees, node = 'root', factors) {
     #   factors: a set of continuous factors in data.frame or matrix
     if (!inherits(trees, "multiPhylo"))
         stop("trees should be an object of class \"multiPhylo\".")
-    cat('Estimating ancestor characters with BM model.')
+    message('Estimating ancestor characters with BM model.')
     # remember if there are several nodes:
     nodes <- (length(node) > 1)
     # now work with each tree
@@ -288,7 +385,8 @@ GetNodeAncFast <- function(trees, node = 'root', factors) {
                     if (j > 1) {
                         temp.anc[[k]][j] <- temp.val
                     } else {
-                        temp.anc[paste0('node', as.character(node[k]))] <- temp.val
+                        temp.anc[paste0('node', as.character(node[k]))] <-
+                            temp.val
                     }
                 }
             } else {
@@ -334,6 +432,9 @@ GetNodeAncFast <- function(trees, node = 'root', factors) {
     return(states)
 }
 
+#' @importFrom geiger fitContinuous rescale
+#' @importFrom phangorn getRoot
+#' @importFrom phytools fastAnc
 GetNodeAncSlow <-
     function (trees,
               factor,
@@ -372,15 +473,16 @@ GetNodeAncSlow <-
                                 model = "BM",
                                 ncores = ncores)
             ou <- fitContinuous(trees[[i]],
-                              this.factor,
-                              model = "OU",
-                              ncores = ncores)
+                                this.factor,
+                                model = "OU",
+                                ncores = ncores)
             eb <- fitContinuous(trees[[i]],
-                              this.factor,
-                              model = "EB",
-                              ncores = ncores)
+                                this.factor,
+                                model = "EB",
+                                ncores = ncores)
             # sort them by AICc
-            aicc <- structure(c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc),
+            aicc <-
+                structure(c(bm$opt$aicc, ou$opt$aicc, eb$opt$aicc),
                           names = c("BM", "OU", "EB"))
             selected <- names(sort(aicc)[1])
             # if diff too small - change selected
@@ -391,7 +493,8 @@ GetNodeAncSlow <-
                 selected <- 'BM'
             cont.model[i] <- selected
             # message("Tree no.", i, " preferred model: ", selected);
-            # message( 'BM:', round(aicc[1], 2), ' OU:', round(aicc[2], 2), ' EB:', round(aicc[3], 2) );
+            # message( 'BM:', round(aicc[1], 2), ' OU:', round(aicc[2], 2),
+            # ' EB:', round(aicc[3], 2) );
             # now fit tree to model
             cat('.')
             if (selected == 'OU') {
@@ -421,7 +524,8 @@ GetNodeAncSlow <-
                     if (i > 1) {
                         cont.states[[k]][i] <- temp.val
                     } else {
-                        cont.states[paste0('node', as.character(node[k]))] <- temp.val
+                        cont.states[paste0('node', as.character(node[k]))] <-
+                            temp.val
                     }
                 }
             } else {
@@ -442,16 +546,19 @@ GetDistrByPred <- function(stack,
                            predictors,
                            boost = .05,
                            checkIfStop = F) {
+
     # Get approximate distribution for each layer in stack by predictors values
     # use raster
     # Args:
     #   stack: a RasterStack object
     #   predictors: a data.frame with predictors values
     #   boost: percentage of each predictor value increment (+/-, %)
+    #   checkIfStop: check for useful information in overlapped layers
+
     if (!inherits(stack, "RasterStack"))
         stop("stack should be an object of class \"RasterStack\".")
     layer.list <- list()
-    cat('Approximating distibution in each layer.')
+    message('Approximating distibution in each layer')
     for (i in 1:length(stack[1])) {
         cat('.')
         layerVal.list <- unique(round(predictors[, i]))
@@ -470,7 +577,7 @@ GetDistrByPred <- function(stack,
                 layer.temp <- layer.temp.min * layer.temp.max
                 layer.temp[layer.temp > 0] <- 1
             } else {
-                layer.temp <- stack[[i]] == layerVal
+                layer.temp <- (stack[[i]] == layerVal)
             }
             if (j > 1) {
                 layer.merged <- layer.merged + layer.temp
@@ -478,27 +585,23 @@ GetDistrByPred <- function(stack,
                 layer.merged <- layer.temp
             }
         }
-        layer.merged <-
-            layer.merged / max(values(layer.merged), na.rm = T)
-        layer.list[i] <- layer.merged
+        layer.merged    <- layer.merged / max(values(layer.merged), na.rm = T)
+        layer.list[[i]]   <- layer.merged
+
         if (checkIfStop) {
             layer.result <- OverlapLayers(layer.list)
-            exit <- all(is.na(values(layer.result)))
+            exit         <- all(is.na(values(layer.result)))
         } else {
             exit <- F
         }
         if (exit) {
-            cat('weak signal\n')
+            message('\nWeak signal')
             break
         }
     }
-
-    if (!exit && checkIfStop)
-        cat('done\n\n')
-    return(layer.result)
-    if (!exit)
-        cat('done\n\n')
-    return(layer.list)
+    if (!exit) message('\nDone')
+    if (checkIfStop) return (layer.result)
+    return (layer.list)
 }
 
 OverlapLayers <- function(list, stopIfNA = F) {
@@ -518,7 +621,6 @@ OverlapLayers <- function(list, stopIfNA = F) {
             break
         }
     }
-    layer.result <-
-        layer.result / max(values(layer.result), na.rm = T)
+    layer.result <- layer.result / max(values(layer.result), na.rm = T)
     return(layer.result)
 }
