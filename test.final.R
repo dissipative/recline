@@ -3,7 +3,6 @@
 
 source('R/Recline.R')
 source('R/AncestralNiche.R')
-
 source('R/AncNiche.Save.R')
 source('R/AncestralDistrib.R')
 source('R/AncDistrib.Save.R')
@@ -36,8 +35,8 @@ simple.tree <- SampleByGroups(mnem.tree, grouping, replicates = 1)
 simple.forest <- SampleByGroups(mnem.forest.sample, grouping, replicates = 10)
 
 # visualize
-plotTree(simple.tree, fsize=.5)
-plotTree(simple.forest, node.numbers=T, fsize=.5)
+phytools::plotTree(simple.tree, fsize = .5)
+phytools::plotTree(simple.forest, node.numbers = T, fsize = .5)
 
 # input
 outgroup <- c('ariadne01', 'ariadne02')

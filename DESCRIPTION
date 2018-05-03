@@ -1,8 +1,8 @@
 Package: recline
 Type: Package
 Title: Reconstruction of Climatic Niche by phylogenetic and geographic data
-Version: 0.0.0.9075
-Date: 2016-01-17
+Version: 0.0.0.9077
+Date: 2018-05-02
 Author: Artem A. Frolov [aut, cre, cph]
 Maintainer: Artem A. Frolov <af.atgc@gmail.com>
 License: GPL (>= 2)
@@ -10,23 +10,10 @@ Depends:
     R (>= 2.10),
     ape,
     phytools,
-    phangorn,
     geiger,
     raster,
-    ade4,
-    factoextra,
-    reshape2,
-    ggplot2
 Imports:
-    ape,
-    phytools,
     phangorn,
-    geiger,
-    raster,
-    ade4,
-    factoextra,
-    reshape2,
-    ggplot2,
     grDevices,
     utils,
     stats
@@ -37,4 +24,4 @@ Description: The package provides several functions for easy
     functions for making a reconstruction of the ancestral climatic niche by given
     ultrametric phylogenetic tree and for estimation of the probable distribution
     area of the ancestor by predictors values restored from PCA.
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
